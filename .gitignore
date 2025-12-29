@@ -26,3 +26,8 @@ htmlcov/
 out/
 cache/
 broadcast/
+
+# Node/Next
+node_modules/
+.next/
+.env.local

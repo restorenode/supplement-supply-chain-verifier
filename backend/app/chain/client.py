@@ -39,8 +39,6 @@ class BatchHashRegistryClient:
     def __init__(self) -> None:
         if not settings.chain_rpc_url or not settings.contract_address:
             raise RuntimeError("CHAIN_RPC_URL and CONTRACT_ADDRESS must be set")
-        if not settings.publisher_private_key:
-            raise RuntimeError("PUBLISHER_PRIVATE_KEY must be set")
         if not settings.chain_id:
             raise RuntimeError("CHAIN_ID must be set")
 
@@ -49,26 +47,35 @@ class BatchHashRegistryClient:
             address=self.w3.to_checksum_address(settings.contract_address),
             abi=_MINIMAL_ABI,
         )
-        self.account = self.w3.eth.account.from_key(settings.publisher_private_key)
         self.chain_id = settings.chain_id
+        self._account = None
 
     @property
     def publisher_address(self) -> str:
-        return self.account.address
+        account = self._get_account()
+        return account.address
+
+    def _get_account(self):
+        if self._account is None:
+            if not settings.publisher_private_key:
+                raise RuntimeError("PUBLISHER_PRIVATE_KEY must be set")
+            self._account = self.w3.eth.account.from_key(settings.publisher_private_key)
+        return self._account
 
     def publish(self, batch_id_hash: bytes, attestation_hash: bytes) -> str:
-        nonce = self.w3.eth.get_transaction_count(self.account.address)
+        account = self._get_account()
+        nonce = self.w3.eth.get_transaction_count(account.address)
         gas_price = self.w3.eth.gas_price
         tx = self.contract.functions.publish(batch_id_hash, attestation_hash).build_transaction(
             {
-                "from": self.account.address,
+                "from": account.address,
                 "nonce": nonce,
                 "gasPrice": gas_price,
                 "chainId": self.chain_id,
             }
         )
         tx.setdefault("gas", self.w3.eth.estimate_gas(tx))
-        signed = self.w3.eth.account.sign_transaction(tx, self.account.key)
+        signed = self.w3.eth.account.sign_transaction(tx, account.key)
         raw_tx = getattr(signed, "rawTransaction", None) or signed.raw_transaction
         tx_hash = self.w3.eth.send_raw_transaction(raw_tx)
         return self.w3.to_hex(tx_hash)
