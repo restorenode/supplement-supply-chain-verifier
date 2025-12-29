@@ -1,29 +1,13 @@
-import json
-from typing import Any, Dict
-
 from web3 import Web3
 
+from app.attestation.canonical import build_canonical_attestation, canonical_attestation_json
 from app.models.batch import Batch
+from app.schemas.extraction import ExtractionResult
 
 
-def _batch_to_canonical_dict(batch: Batch) -> Dict[str, Any]:
-    data: Dict[str, Any] = {
-        "batchId": batch.batch_id,
-        "productName": batch.product_name,
-        "supplementType": batch.supplement_type,
-        "manufacturer": batch.manufacturer,
-        "productionDate": batch.production_date.isoformat(),
-    }
-    if batch.expires_date is not None:
-        data["expiresDate"] = batch.expires_date.isoformat()
-    else:
-        data["expiresDate"] = None
-    return data
-
-
-def canonical_attestation_json(batch: Batch) -> str:
-    payload = _batch_to_canonical_dict(batch)
-    return json.dumps(payload, sort_keys=True, separators=(",", ":"), ensure_ascii=True)
+def build_attestation_json(batch: Batch, extraction: ExtractionResult, document_fingerprint: str) -> str:
+    attestation = build_canonical_attestation(batch, extraction, document_fingerprint)
+    return canonical_attestation_json(attestation)
 
 
 def hash_batch_id(batch_id: str) -> bytes:

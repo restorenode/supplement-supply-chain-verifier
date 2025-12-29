@@ -8,3 +8,5 @@ python-multipart>=0.0.9
 httpx>=0.26.0
 pytest>=8.0.0
 web3>=6.15.0
+PyMuPDF>=1.24.0
+pdfminer.six>=20231228

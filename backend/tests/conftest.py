@@ -12,6 +12,7 @@ def client(tmp_path):
     config.settings.database_url = f"sqlite:///{tmp_path}/test.db"
     config.settings.admin_api_key = "test-key"
     config.settings.env = "test"
+    config.settings.llm_provider = "mock"
     init_engine()
     init_db()
     with TestClient(app) as test_client:

@@ -1,0 +1,25 @@
+You are extracting structured data from a supplement lab report.
+
+Return ONLY valid JSON matching this schema:
+{
+  "labName": string|null,
+  "reportDate": "YYYY-MM-DD"|null,
+  "productOrSampleName": string|null,
+  "lotOrBatchInReport": string|null,
+  "potency": { "name": string, "amount": number, "unit": string } | null,
+  "analytes": [ { "name": string, "result": number|null, "unit": string|null, "limit": number|null, "status": "PASS"|"FAIL"|"UNKNOWN" } ],
+  "contaminants": [ { "name": string, "result": number|null, "unit": string|null, "limit": number|null, "status": "PASS"|"FAIL"|"UNKNOWN" } ],
+  "methods": [string],
+  "notes": string|null,
+  "confidence": number
+}
+
+Rules:
+- If a field is not present in the report, set it to null or an empty array.
+- Normalize units (e.g. mg, mcg, IU, ppm, CFU/g) as they appear; do not invent conversions.
+- Status:
+  - PASS if the report clearly indicates pass or result is below limit
+  - FAIL if clearly indicates fail or result above limit
+  - UNKNOWN otherwise
+- Confidence between 0 and 1 based on how explicit the report is.
+- Do not include extra keys.

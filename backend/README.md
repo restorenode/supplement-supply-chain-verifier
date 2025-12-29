@@ -27,6 +27,10 @@ Copy `.env.example` to `.env` and update values as needed. Required variables:
 - `PUBLISHER_PRIVATE_KEY`
 - `CHAIN_ID`
 - `CHAIN_NAME` (optional label stored with published batches)
+- `LLM_PROVIDER` (`mock` or `openai`)
+- `LLM_BASE_URL` (required for `openai`)
+- `LLM_API_KEY` (required for `openai`)
+- `LLM_MODEL` (required for `openai`)
 
 ## Run the app
 
@@ -50,3 +54,23 @@ transactions to publish batch attestation hashes to the Initia EVM `BatchHashReg
 
 Verification recomputes the canonical JSON hash for the batch, reads the on-chain hash, and returns
 `verified: true` only when both hashes match and an on-chain value exists.
+
+## AI extraction
+
+`/batches/{batchId}/extract` reads the latest uploaded PDF, extracts text, and runs the LLM extractor.
+The mock provider returns empty fields with low confidence for deterministic tests.
+
+To use the mock extractor:
+
+```bash
+export LLM_PROVIDER=mock
+```
+
+To use an OpenAI-compatible endpoint:
+
+```bash
+export LLM_PROVIDER=openai
+export LLM_BASE_URL=https://api.openai.com/v1
+export LLM_API_KEY=your-key
+export LLM_MODEL=gpt-4o-mini
+```

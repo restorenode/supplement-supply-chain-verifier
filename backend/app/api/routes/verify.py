@@ -4,9 +4,11 @@ from web3 import Web3
 
 from app.api.deps import get_db
 from app.chain.deps import get_chain_client
-from app.chain.hashing import canonical_attestation_json, hash_attestation, hash_batch_id
+from app.chain.hashing import build_attestation_json, hash_attestation, hash_batch_id
 from app.core.errors import raise_api_error
 from app.models.batch import Batch as BatchModel
+from app.models.extraction import Extraction as ExtractionModel
+from app.schemas.extraction import ExtractionResult
 from app.schemas.verify import VerificationResult
 
 router = APIRouter()
@@ -22,8 +24,13 @@ def verify_batch(
     if not batch:
         raise_api_error(status.HTTP_404_NOT_FOUND, "BATCH_NOT_FOUND", f"Batch '{batchId}' not found")
 
+    extraction = db.get(ExtractionModel, batchId)
+    if not extraction:
+        raise_api_error(status.HTTP_404_NOT_FOUND, "NOT_FOUND", "Resource not found")
+
+    extraction_result = ExtractionResult.model_validate(extraction.extracted_fields)
     batch_id_hash = hash_batch_id(batch.batch_id)
-    canonical_json = canonical_attestation_json(batch)
+    canonical_json = build_attestation_json(batch, extraction_result, extraction.document_fingerprint)
     offchain_hash = hash_attestation(canonical_json)
     onchain_hash = chain_client.get(batch_id_hash)
 
