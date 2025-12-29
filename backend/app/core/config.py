@@ -5,6 +5,11 @@ class Settings(BaseSettings):
     database_url: str = "sqlite:///./app.db"
     admin_api_key: str = ""
     env: str = "dev"
+    chain_rpc_url: str = ""
+    contract_address: str = ""
+    publisher_private_key: str = ""
+    chain_id: int = 0
+    chain_name: str = "initia-evm"
 
     model_config = SettingsConfigDict(env_file=".env", env_prefix="", case_sensitive=False)
 

@@ -1,7 +1,7 @@
 import enum
-from datetime import date
+from datetime import date, datetime
 
-from sqlalchemy import Date, Enum, String
+from sqlalchemy import Date, DateTime, Enum, String
 from sqlalchemy.orm import Mapped, mapped_column
 
 from app.db.base import Base
@@ -23,3 +23,7 @@ class Batch(Base):
     production_date: Mapped[date] = mapped_column(Date, nullable=False)
     expires_date: Mapped[date | None] = mapped_column(Date, nullable=True)
     status: Mapped[BatchStatus] = mapped_column(Enum(BatchStatus), nullable=False, default=BatchStatus.DRAFT)
+    chain: Mapped[str | None] = mapped_column(String(64), nullable=True)
+    tx_hash: Mapped[str | None] = mapped_column(String(66), nullable=True)
+    publisher_address: Mapped[str | None] = mapped_column(String(42), nullable=True)
+    published_at: Mapped[datetime | None] = mapped_column(DateTime, nullable=True)
