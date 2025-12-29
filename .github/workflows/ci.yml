@@ -19,6 +19,13 @@ jobs:
           python-version: '3.11'
           cache: 'pip'
           cache-dependency-path: backend/requirements.txt
+      - name: Install backend deps for integration tests
+        run: python -m pip install -r backend/requirements.txt
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+          cache: 'pip'
+          cache-dependency-path: backend/requirements.txt
       - name: Install backend deps
         run: python -m pip install -r backend/requirements.txt
       - name: Run backend unit tests
