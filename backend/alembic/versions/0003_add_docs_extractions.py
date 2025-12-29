@@ -1,6 +1,6 @@
 """add documents and extractions
 
-Revision ID: 0003_add_documents_and_extractions
+Revision ID: 0003_add_docs_extractions
 Revises: 0002_add_chain_fields
 Create Date: 2025-01-03 00:00:00.000000
 
@@ -9,7 +9,7 @@ from alembic import op
 import sqlalchemy as sa
 
 
-revision = "0003_add_documents_and_extractions"
+revision = "0003_add_docs_extractions"
 down_revision = "0002_add_chain_fields"
 branch_labels = None
 depends_on = None

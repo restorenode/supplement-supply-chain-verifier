@@ -1,4 +1,4 @@
-# Ethical Supplement Supply Chain Verifier (Backend)
+# Supplement Supply Chain Verification Protocol (Backend)
 
 ## Setup
 
@@ -27,6 +27,7 @@ Copy `.env.example` to `.env` and update values as needed. Required variables:
 - `PUBLISHER_PRIVATE_KEY`
 - `CHAIN_ID`
 - `CHAIN_NAME` (optional label stored with published batches)
+- `CHAIN_MODE` (`real` or `mock`)
 - `LLM_PROVIDER` (`mock` or `openai`)
 - `LLM_BASE_URL` (required for `openai`)
 - `LLM_API_KEY` (required for `openai`)
@@ -51,6 +52,9 @@ site-packages are used instead of the system/Homebrew ones.
 
 The chain client lives in `app/chain/client.py` and uses web3.py with legacy (non-EIP-1559)
 transactions to publish batch attestation hashes to the Initia EVM `BatchHashRegistry` contract.
+
+When `CHAIN_MODE=mock`, the backend stores published hashes in-memory for local/dev and integration
+tests. This mode does not require chain RPC or a private key.
 
 Verification recomputes the canonical JSON hash for the batch, reads the on-chain hash, and returns
 `verified: true` only when both hashes match and an on-chain value exists.

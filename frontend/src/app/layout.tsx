@@ -3,8 +3,8 @@ import "./styles.css";
 import Link from "next/link";
 
 export const metadata = {
-  title: "Ethical Supplement Verifier",
-  description: "Verify supplement batch attestations and manage publisher workflows."
+  title: "Supplement Supply Chain Verification Protocol",
+  description: "Verify supplement batches and publish attestations over a tamper-evident chain."
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
@@ -14,8 +14,8 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         <main>
           <div className="header">
             <div>
-              <h1>Ethical Supplement Supply Chain Verifier</h1>
-              <p>Trace, verify, and publish batch attestations with a tamper-evident chain.</p>
+              <h1>Supplement Supply Chain Verification Protocol</h1>
+              <p>Trace, verify, and publish supplement batch attestations with a tamper-evident chain.</p>
             </div>
             <nav className="grid" style={{ gridAutoFlow: "column" }}>
               <Link href="/verify">Verify</Link>

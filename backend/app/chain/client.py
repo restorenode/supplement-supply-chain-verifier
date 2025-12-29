@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
+import time
 from typing import Optional
 
 from web3 import Web3
@@ -89,3 +90,29 @@ class BatchHashRegistryClient:
         if result == b"\x00" * 32:
             return None
         return result
+
+
+class MockBatchHashRegistryClient:
+    def __init__(self) -> None:
+        self._store: dict[bytes, bytes] = {}
+        self._receipts: dict[str, ChainReceipt] = {}
+
+    @property
+    def publisher_address(self) -> str:
+        return "0x0000000000000000000000000000000000000000"
+
+    def publish(self, batch_id_hash: bytes, attestation_hash: bytes) -> str:
+        if batch_id_hash == b"\x00" * 32 or attestation_hash == b"\x00" * 32:
+            raise RuntimeError("Invalid hash values")
+        if batch_id_hash in self._store:
+            raise RuntimeError("ALREADY_PUBLISHED")
+        self._store[batch_id_hash] = attestation_hash
+        tx_hash = Web3.to_hex(Web3.keccak(text=f"{batch_id_hash.hex()}:{attestation_hash.hex()}:{time.time()}"))
+        self._receipts[tx_hash] = ChainReceipt(tx_hash=tx_hash, block_number=1)
+        return tx_hash
+
+    def get_receipt(self, tx_hash: str) -> ChainReceipt:
+        return self._receipts.get(tx_hash, ChainReceipt(tx_hash=tx_hash, block_number=1))
+
+    def get(self, batch_id_hash: bytes) -> Optional[bytes]:
+        return self._store.get(batch_id_hash)

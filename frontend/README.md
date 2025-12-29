@@ -1,4 +1,4 @@
-# Ethical Supplement Supply Chain Verifier (Frontend)
+# Supplement Supply Chain Verification Protocol (Frontend)
 
 ## Install
 

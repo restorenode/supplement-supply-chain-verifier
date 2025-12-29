@@ -7,7 +7,7 @@ from app.core.config import settings
 from app.core.errors import http_exception_handler, unhandled_exception_handler, validation_exception_handler
 from app.db.init_db import init_db
 
-app = FastAPI(title="Ethical Supplement Supply Chain Verifier API")
+app = FastAPI(title="Supplement Supply Chain Verification Protocol API")
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["http://localhost:3000", "http://127.0.0.1:3000"],

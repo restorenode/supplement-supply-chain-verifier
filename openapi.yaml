@@ -1,6 +1,6 @@
 openapi: 3.1.0
 info:
-  title: Ethical Supplement Supply Chain Verifier API
+  title: Supplement Supply Chain Verification Protocol API
   version: 1.0.0
   description: |
     API for verifying supplement batch authenticity using blockchain attestations.
@@ -915,4 +915,3 @@ components:
                 error:
                   code: "INTERNAL_ERROR"
                   message: "An internal error occurred"
-
