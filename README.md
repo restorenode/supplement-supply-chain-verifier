@@ -137,3 +137,37 @@ Or use the helper script (reads `ADMIN_API_KEY` from `./.env` if set):
 ```bash
 ./backend/scripts/run_integration_tests.sh
 ```
+
+## CI/CD
+
+### CI (GitHub Actions)
+- Runs backend unit tests (`pytest`) with `LLM_PROVIDER=mock`, `CHAIN_MODE=mock`, and SQLite.
+- Runs frontend build (`npm run build`) and lint (`npm run lint`).
+- Runs integration tests via Docker Compose (builds stack, waits for health, executes `backend/scripts/run_integration_tests.sh`).
+
+Run locally with the same commands:
+
+```bash
+# Backend unit tests
+cd backend
+LLM_PROVIDER=mock CHAIN_MODE=mock DATABASE_URL=sqlite:///./app.db python3 -m pytest
+
+# Frontend build + lint
+cd frontend
+npm ci
+npm run build
+npm run lint
+
+# Integration tests (Docker)
+cd ..
+cp .env.example .env
+docker compose up -d --build
+./backend/scripts/run_integration_tests.sh
+docker compose down -v
+```
+
+### CD (GitHub Actions)
+The CD workflow is a placeholder and will be filled in with provider-specific steps. Expected secrets:
+- `DEPLOY_TOKEN`: deployment authentication token
+- `BACKEND_DEPLOY_TARGET`: backend deployment target/identifier
+- `FRONTEND_DEPLOY_TARGET`: frontend deployment target/identifier

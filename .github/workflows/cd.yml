@@ -1,0 +1,24 @@
+name: CD
+
+on:
+  push:
+    branches: [main]
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Deploy backend (placeholder)
+        run: |
+          echo "TODO: deploy backend"
+          # TODO: authenticate with provider
+          # TODO: build and push backend image
+          # TODO: run migrations
+          # TODO: update backend service
+      - name: Deploy frontend (placeholder)
+        run: |
+          echo "TODO: deploy frontend"
+          # TODO: authenticate with provider
+          # TODO: build and push frontend image or static bundle
+          # TODO: update frontend service

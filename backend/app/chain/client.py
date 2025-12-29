@@ -96,6 +96,7 @@ class MockBatchHashRegistryClient:
     def __init__(self) -> None:
         self._store: dict[bytes, bytes] = {}
         self._receipts: dict[str, ChainReceipt] = {}
+        self._tx_by_batch: dict[bytes, str] = {}
 
     @property
     def publisher_address(self) -> str:
@@ -105,10 +106,21 @@ class MockBatchHashRegistryClient:
         if batch_id_hash == b"\x00" * 32 or attestation_hash == b"\x00" * 32:
             raise RuntimeError("Invalid hash values")
         if batch_id_hash in self._store:
+            if self._store[batch_id_hash] == attestation_hash:
+                existing_tx = self._tx_by_batch.get(batch_id_hash)
+                if existing_tx:
+                    return existing_tx
+                tx_hash = Web3.to_hex(
+                    Web3.keccak(text=f"{batch_id_hash.hex()}:{attestation_hash.hex()}:repeat")
+                )
+                self._receipts[tx_hash] = ChainReceipt(tx_hash=tx_hash, block_number=1)
+                self._tx_by_batch[batch_id_hash] = tx_hash
+                return tx_hash
             raise RuntimeError("ALREADY_PUBLISHED")
         self._store[batch_id_hash] = attestation_hash
         tx_hash = Web3.to_hex(Web3.keccak(text=f"{batch_id_hash.hex()}:{attestation_hash.hex()}:{time.time()}"))
         self._receipts[tx_hash] = ChainReceipt(tx_hash=tx_hash, block_number=1)
+        self._tx_by_batch[batch_id_hash] = tx_hash
         return tx_hash
 
     def get_receipt(self, tx_hash: str) -> ChainReceipt:
