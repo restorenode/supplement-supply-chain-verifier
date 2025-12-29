@@ -1,0 +1,918 @@
+openapi: 3.1.0
+info:
+  title: Ethical Supplement Supply Chain Verifier API
+  version: 1.0.0
+  description: |
+    API for verifying supplement batch authenticity using blockchain attestations.
+    
+    **Roles:**
+    - **Admin/Publisher**: Create batches, upload documents, extract data, publish attestations
+    - **Consumer**: Verify batch attestations
+    
+    **Authentication:**
+    - Admin endpoints require `X-API-Key` header
+    - Public endpoints (verify) require no authentication
+
+servers:
+  - url: http://localhost:3000/api
+    description: Local development server
+  - url: https://api.example.com/api
+    description: Production server (placeholder)
+
+tags:
+  - name: Batch
+    description: Batch management operations
+  - name: Document
+    description: Lab report document operations
+  - name: AI
+    description: AI extraction operations
+  - name: Chain
+    description: Blockchain attestation operations
+  - name: Verify
+    description: Public verification operations
+
+paths:
+  /batches:
+    post:
+      tags:
+        - Batch
+      summary: Create a new batch
+      description: Creates a new batch record. Batch starts in DRAFT status.
+      operationId: createBatch
+      security:
+        - ApiKeyAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/BatchCreate'
+            examples:
+              vitaminA:
+                summary: Vitamin A supplement batch
+                value:
+                  batchId: "VA-2025-0001"
+                  productName: "Vitamin A 10,000 IU"
+                  supplementType: "Vitamin A"
+                  manufacturer: "PureSupplements Inc."
+                  productionDate: "2025-01-15"
+                  expiresDate: "2027-01-15"
+      responses:
+        '201':
+          description: Batch created successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Batch'
+              examples:
+                created:
+                  summary: Created batch
+                  value:
+                    batchId: "VA-2025-0001"
+                    productName: "Vitamin A 10,000 IU"
+                    supplementType: "Vitamin A"
+                    manufacturer: "PureSupplements Inc."
+                    productionDate: "2025-01-15"
+                    expiresDate: "2027-01-15"
+                    status: "DRAFT"
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '409':
+          description: Batch ID already exists
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              examples:
+                duplicate:
+                  summary: Duplicate batch ID
+                  value:
+                    error:
+                      code: "BATCH_EXISTS"
+                      message: "Batch with ID 'VA-2025-0001' already exists"
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+  /batches/{batchId}:
+    get:
+      tags:
+        - Batch
+      summary: Get batch details
+      description: Retrieves batch information by batch ID
+      operationId: getBatch
+      security:
+        - ApiKeyAuth: []
+      parameters:
+        - name: batchId
+          in: path
+          required: true
+          description: Human-friendly batch identifier (e.g., "VA-2025-0001")
+          schema:
+            type: string
+            pattern: '^[A-Z0-9-]+$'
+            example: "VA-2025-0001"
+      responses:
+        '200':
+          description: Batch found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Batch'
+              examples:
+                found:
+                  summary: Batch details
+                  value:
+                    batchId: "VA-2025-0001"
+                    productName: "Vitamin A 10,000 IU"
+                    supplementType: "Vitamin A"
+                    manufacturer: "PureSupplements Inc."
+                    productionDate: "2025-01-15"
+                    expiresDate: "2027-01-15"
+                    status: "READY"
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+  /batches/{batchId}/documents:
+    post:
+      tags:
+        - Document
+      summary: Upload lab report PDF
+      description: Uploads a lab report PDF document for a batch. The file is stored and a document record is created.
+      operationId: uploadDocument
+      security:
+        - ApiKeyAuth: []
+      parameters:
+        - name: batchId
+          in: path
+          required: true
+          description: Batch identifier
+          schema:
+            type: string
+            pattern: '^[A-Z0-9-]+$'
+            example: "VA-2025-0001"
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              required:
+                - file
+              properties:
+                file:
+                  type: string
+                  format: binary
+                  description: Lab report PDF file
+            encoding:
+              file:
+                contentType: application/pdf
+      responses:
+        '201':
+          description: Document uploaded successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Document'
+              examples:
+                uploaded:
+                  summary: Uploaded document
+                  value:
+                    documentId: "550e8400-e29b-41d4-a716-446655440000"
+                    batchId: "VA-2025-0001"
+                    filename: "lab-report-va-2025-0001.pdf"
+                    contentType: "application/pdf"
+                    uploadedAt: "2025-01-20T10:30:00Z"
+                    storageUrl: "/storage/documents/550e8400-e29b-41d4-a716-446655440000.pdf"
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          description: Batch not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+  /batches/{batchId}/extract:
+    post:
+      tags:
+        - AI
+      summary: Trigger AI extraction from lab report
+      description: |
+        Triggers AI extraction of structured data from the uploaded lab report PDF.
+        Returns the extraction result synchronously. Requires a document to be uploaded first.
+      operationId: extractData
+      security:
+        - ApiKeyAuth: []
+      parameters:
+        - name: batchId
+          in: path
+          required: true
+          description: Batch identifier
+          schema:
+            type: string
+            pattern: '^[A-Z0-9-]+$'
+            example: "VA-2025-0001"
+      responses:
+        '200':
+          description: Extraction completed successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ExtractionResult'
+              examples:
+                extracted:
+                  summary: Extraction result
+                  value:
+                    batchId: "VA-2025-0001"
+                    extractedFields:
+                      potency:
+                        vitaminA: "10,000 IU"
+                        unit: "IU"
+                      contaminants:
+                        lead: "< 0.1 ppm"
+                        mercury: "< 0.05 ppm"
+                        arsenic: "< 0.1 ppm"
+                      methods:
+                        potencyTest: "HPLC"
+                        contaminantTest: "ICP-MS"
+                      labName: "Certified Testing Labs"
+                      testDate: "2025-01-18"
+                    extractedAt: "2025-01-20T10:35:00Z"
+                    modelInfo:
+                      modelName: "gpt-4"
+                      version: "2024-11"
+        '400':
+          description: No document found for batch or extraction failed
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              examples:
+                noDocument:
+                  summary: No document uploaded
+                  value:
+                    error:
+                      code: "NO_DOCUMENT"
+                      message: "No document found for batch 'VA-2025-0001'"
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+  /batches/{batchId}/attestation:
+    get:
+      tags:
+        - Chain
+      summary: Get attestation data
+      description: |
+        Retrieves the canonical JSON attestation and its hash for a batch.
+        This is used to prepare for on-chain publication.
+      operationId: getAttestation
+      security:
+        - ApiKeyAuth: []
+      parameters:
+        - name: batchId
+          in: path
+          required: true
+          description: Batch identifier
+          schema:
+            type: string
+            pattern: '^[A-Z0-9-]+$'
+            example: "VA-2025-0001"
+      responses:
+        '200':
+          description: Attestation data found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Attestation'
+              examples:
+                attestation:
+                  summary: Attestation data
+                  value:
+                    batchId: "VA-2025-0001"
+                    canonicalJson:
+                      batchId: "VA-2025-0001"
+                      productName: "Vitamin A 10,000 IU"
+                      supplementType: "Vitamin A"
+                      manufacturer: "PureSupplements Inc."
+                      productionDate: "2025-01-15"
+                      potency:
+                        vitaminA: "10,000 IU"
+                      contaminants:
+                        lead: "< 0.1 ppm"
+                      testDate: "2025-01-18"
+                      labName: "Certified Testing Labs"
+                    canonicalJsonHash: "0x3a8f5c2d1e9b4a7f6c8d2e1a3b5c7d9e0f2a4b6c8d0e2f4a6b8c0d2e4f6a8b0c2"
+                    createdAt: "2025-01-20T10:40:00Z"
+                    published: false
+                    chain: "initia-evm-testnet"
+                    txHash: null
+                    publisherAddress: null
+                    publishedAt: null
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          description: Batch or attestation not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+  /batches/{batchId}/publish:
+    post:
+      tags:
+        - Chain
+      summary: Publish attestation to blockchain
+      description: |
+        Publishes the attestation hash to Initia EVM blockchain.
+        Requires a publisher wallet address. The hash is computed from the canonical JSON.
+      operationId: publishAttestation
+      security:
+        - ApiKeyAuth: []
+      parameters:
+        - name: batchId
+          in: path
+          required: true
+          description: Batch identifier
+          schema:
+            type: string
+            pattern: '^[A-Z0-9-]+$'
+            example: "VA-2025-0001"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - publisherAddress
+              properties:
+                publisherAddress:
+                  type: string
+                  description: Ethereum-compatible wallet address (0x...)
+                  pattern: '^0x[a-fA-F0-9]{40}$'
+                  example: "0x742d35Cc6634C0532925a3b844Bc9e7595f0bEb"
+            examples:
+              publish:
+                summary: Publish request
+                value:
+                  publisherAddress: "0x742d35Cc6634C0532925a3b844Bc9e7595f0bEb"
+      responses:
+        '200':
+          description: Attestation published successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  batchId:
+                    type: string
+                    example: "VA-2025-0001"
+                  txHash:
+                    type: string
+                    description: Blockchain transaction hash
+                    pattern: '^0x[a-fA-F0-9]{64}$'
+                    example: "0x1234567890abcdef1234567890abcdef1234567890abcdef1234567890abcdef"
+                  blockNumber:
+                    type: integer
+                    description: Block number where transaction was included
+                    example: 12345678
+                  publishedAt:
+                    type: string
+                    format: date-time
+                    example: "2025-01-20T10:45:00Z"
+              examples:
+                published:
+                  summary: Published successfully
+                  value:
+                    batchId: "VA-2025-0001"
+                    txHash: "0x1234567890abcdef1234567890abcdef1234567890abcdef1234567890abcdef"
+                    blockNumber: 12345678
+                    publishedAt: "2025-01-20T10:45:00Z"
+        '400':
+          description: Invalid request or attestation not ready
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              examples:
+                notReady:
+                  summary: Attestation not ready
+                  value:
+                    error:
+                      code: "ATTESTATION_NOT_READY"
+                      message: "Attestation data not available. Extract data first."
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '500':
+          description: Blockchain transaction failed
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              examples:
+                txFailed:
+                  summary: Transaction failed
+                  value:
+                    error:
+                      code: "BLOCKCHAIN_ERROR"
+                      message: "Failed to publish attestation to blockchain"
+                      details: "Transaction reverted: insufficient gas"
+
+  /batches/{batchId}/verify:
+    get:
+      tags:
+        - Verify
+      summary: Verify batch attestation (Public)
+      description: |
+        Public endpoint to verify a batch's blockchain attestation.
+        Compares the off-chain canonical JSON hash with the on-chain hash.
+        No authentication required.
+      operationId: verifyBatch
+      parameters:
+        - name: batchId
+          in: path
+          required: true
+          description: Batch identifier
+          schema:
+            type: string
+            pattern: '^[A-Z0-9-]+$'
+            example: "VA-2025-0001"
+      responses:
+        '200':
+          description: Verification result
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/VerificationResult'
+              examples:
+                verified:
+                  summary: Verified batch
+                  value:
+                    verified: true
+                    batchId: "VA-2025-0001"
+                    offchainHash: "0x3a8f5c2d1e9b4a7f6c8d2e1a3b5c7d9e0f2a4b6c8d0e2f4a6b8c0d2e4f6a8b0c2"
+                    onchainHash: "0x3a8f5c2d1e9b4a7f6c8d2e1a3b5c7d9e0f2a4b6c8d0e2f4a6b8c0d2e4f6a8b0c2"
+                    txHash: "0x1234567890abcdef1234567890abcdef1234567890abcdef1234567890abcdef"
+                    mismatchReason: null
+                    attestation:
+                      productName: "Vitamin A 10,000 IU"
+                      supplementType: "Vitamin A"
+                      manufacturer: "PureSupplements Inc."
+                      productionDate: "2025-01-15"
+                unverified:
+                  summary: Unverified batch
+                  value:
+                    verified: false
+                    batchId: "VA-2025-0001"
+                    offchainHash: "0x3a8f5c2d1e9b4a7f6c8d2e1a3b5c7d9e0f2a4b6c8d0e2f4a6b8c0d2e4f6a8b0c2"
+                    onchainHash: "0x5b9f6d3e2a0c8d1f4e7a9b2c5d8e1f4a7b0c3d6e9f2a5b8c1d4e7f0a3b6c9d2e5"
+                    txHash: "0x1234567890abcdef1234567890abcdef1234567890abcdef1234567890abcdef"
+                    mismatchReason: "Hash mismatch: off-chain and on-chain hashes do not match"
+                    attestation:
+                      productName: "Vitamin A 10,000 IU"
+                      supplementType: "Vitamin A"
+                      manufacturer: "PureSupplements Inc."
+                      productionDate: "2025-01-15"
+                notFound:
+                  summary: Not published
+                  value:
+                    verified: false
+                    batchId: "VA-2025-0001"
+                    offchainHash: "0x3a8f5c2d1e9b4a7f6c8d2e1a3b5c7d9e0f2a4b6c8d0e2f4a6b8c0d2e4f6a8b0c2"
+                    onchainHash: null
+                    txHash: null
+                    mismatchReason: "No on-chain attestation found for this batch"
+                    attestation:
+                      productName: "Vitamin A 10,000 IU"
+                      supplementType: "Vitamin A"
+                      manufacturer: "PureSupplements Inc."
+                      productionDate: "2025-01-15"
+        '404':
+          description: Batch not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              examples:
+                notFound:
+                  summary: Batch not found
+                  value:
+                    error:
+                      code: "BATCH_NOT_FOUND"
+                      message: "Batch 'VA-2025-0001' not found"
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+components:
+  securitySchemes:
+    ApiKeyAuth:
+      type: apiKey
+      in: header
+      name: X-API-Key
+      description: API key for admin/publisher endpoints
+
+  schemas:
+    BatchCreate:
+      type: object
+      required:
+        - batchId
+        - productName
+        - supplementType
+        - manufacturer
+        - productionDate
+      properties:
+        batchId:
+          type: string
+          description: Human-friendly batch identifier (e.g., "VA-2025-0001")
+          pattern: '^[A-Z0-9-]+$'
+          example: "VA-2025-0001"
+        productName:
+          type: string
+          description: Name of the supplement product
+          example: "Vitamin A 10,000 IU"
+        supplementType:
+          type: string
+          description: Type of supplement (e.g., "Vitamin A", "Omega-3", "Probiotic")
+          example: "Vitamin A"
+        manufacturer:
+          type: string
+          description: Manufacturer name
+          example: "PureSupplements Inc."
+        productionDate:
+          type: string
+          format: date
+          description: Date when batch was produced
+          example: "2025-01-15"
+        expiresDate:
+          type: string
+          format: date
+          description: Expiration date (optional)
+          nullable: true
+          example: "2027-01-15"
+
+    Batch:
+      allOf:
+        - $ref: '#/components/schemas/BatchCreate'
+        - type: object
+          properties:
+            status:
+              $ref: '#/components/schemas/BatchStatus'
+
+    BatchStatus:
+      type: string
+      enum:
+        - DRAFT
+        - READY
+        - PUBLISHED
+      description: |
+        - DRAFT: Batch created but no document uploaded
+        - READY: Document uploaded and extraction completed, ready for attestation
+        - PUBLISHED: Attestation published to blockchain
+      example: "READY"
+
+    Document:
+      type: object
+      required:
+        - documentId
+        - batchId
+        - filename
+        - contentType
+        - uploadedAt
+      properties:
+        documentId:
+          type: string
+          format: uuid
+          description: Unique document identifier
+          example: "550e8400-e29b-41d4-a716-446655440000"
+        batchId:
+          type: string
+          description: Associated batch identifier
+          example: "VA-2025-0001"
+        filename:
+          type: string
+          description: Original filename
+          example: "lab-report-va-2025-0001.pdf"
+        contentType:
+          type: string
+          description: MIME type of the document
+          example: "application/pdf"
+        uploadedAt:
+          type: string
+          format: date-time
+          description: Upload timestamp (ISO 8601)
+          example: "2025-01-20T10:30:00Z"
+        storageUrl:
+          type: string
+          description: URL or path to stored document (may be signed URL for private storage)
+          nullable: true
+          example: "/storage/documents/550e8400-e29b-41d4-a716-446655440000.pdf"
+        signedUrl:
+          type: string
+          description: Temporary signed URL for document access (if using cloud storage)
+          nullable: true
+          example: "https://storage.example.com/documents/550e8400-e29b-41d4-a716-446655440000.pdf?signature=..."
+
+    ExtractionResult:
+      type: object
+      required:
+        - batchId
+        - extractedFields
+        - extractedAt
+        - modelInfo
+      properties:
+        batchId:
+          type: string
+          description: Batch identifier
+          example: "VA-2025-0001"
+        extractedFields:
+          type: object
+          description: Extracted structured data from lab report
+          additionalProperties: true
+          properties:
+            potency:
+              type: object
+              description: Potency measurements
+              additionalProperties:
+                type: string
+              example:
+                vitaminA: "10,000 IU"
+                unit: "IU"
+            contaminants:
+              type: object
+              description: Contaminant test results
+              additionalProperties:
+                type: string
+              example:
+                lead: "< 0.1 ppm"
+                mercury: "< 0.05 ppm"
+                arsenic: "< 0.1 ppm"
+            methods:
+              type: object
+              description: Testing methods used
+              additionalProperties:
+                type: string
+              example:
+                potencyTest: "HPLC"
+                contaminantTest: "ICP-MS"
+            labName:
+              type: string
+              nullable: true
+              example: "Certified Testing Labs"
+            testDate:
+              type: string
+              format: date
+              nullable: true
+              example: "2025-01-18"
+        extractedAt:
+          type: string
+          format: date-time
+          description: Extraction timestamp
+          example: "2025-01-20T10:35:00Z"
+        modelInfo:
+          type: object
+          required:
+            - modelName
+            - version
+          properties:
+            modelName:
+              type: string
+              description: AI model used for extraction
+              example: "gpt-4"
+            version:
+              type: string
+              description: Model version
+              example: "2024-11"
+
+    Attestation:
+      type: object
+      required:
+        - batchId
+        - canonicalJson
+        - canonicalJsonHash
+        - createdAt
+        - published
+        - chain
+      properties:
+        batchId:
+          type: string
+          description: Batch identifier
+          example: "VA-2025-0001"
+        canonicalJson:
+          type: object
+          description: |
+            Canonical JSON representation of the attestation data.
+            This is the source of truth for computing the hash.
+            Includes batch metadata and extracted test results.
+          additionalProperties: true
+          example:
+            batchId: "VA-2025-0001"
+            productName: "Vitamin A 10,000 IU"
+            supplementType: "Vitamin A"
+            manufacturer: "PureSupplements Inc."
+            productionDate: "2025-01-15"
+            potency:
+              vitaminA: "10,000 IU"
+            contaminants:
+              lead: "< 0.1 ppm"
+            testDate: "2025-01-18"
+            labName: "Certified Testing Labs"
+        canonicalJsonHash:
+          type: string
+          description: |
+            SHA-256 hash of the canonical JSON (hex-encoded, prefixed with 0x).
+            This hash is stored on-chain.
+          pattern: '^0x[a-fA-F0-9]{64}$'
+          example: "0x3a8f5c2d1e9b4a7f6c8d2e1a3b5c7d9e0f2a4b6c8d0e2f4a6b8c0d2e4f6a8b0c2"
+        createdAt:
+          type: string
+          format: date-time
+          description: When the attestation was created
+          example: "2025-01-20T10:40:00Z"
+        published:
+          type: boolean
+          description: Whether the attestation has been published to blockchain
+          example: false
+        chain:
+          type: string
+          description: Blockchain network identifier
+          example: "initia-evm-testnet"
+        txHash:
+          type: string
+          description: Blockchain transaction hash (null if not published)
+          nullable: true
+          pattern: '^0x[a-fA-F0-9]{64}$'
+          example: "0x1234567890abcdef1234567890abcdef1234567890abcdef1234567890abcdef"
+        publisherAddress:
+          type: string
+          description: Wallet address of the publisher (null if not published)
+          nullable: true
+          pattern: '^0x[a-fA-F0-9]{40}$'
+          example: "0x742d35Cc6634C0532925a3b844Bc9e7595f0bEb"
+        publishedAt:
+          type: string
+          format: date-time
+          description: When the attestation was published (null if not published)
+          nullable: true
+          example: "2025-01-20T10:45:00Z"
+
+    VerificationResult:
+      type: object
+      required:
+        - verified
+        - batchId
+        - offchainHash
+        - onchainHash
+        - txHash
+        - mismatchReason
+      properties:
+        verified:
+          type: boolean
+          description: Whether the batch attestation is verified (hashes match and on-chain exists)
+          example: true
+        batchId:
+          type: string
+          description: Batch identifier
+          example: "VA-2025-0001"
+        offchainHash:
+          type: string
+          description: Hash computed from off-chain canonical JSON
+          pattern: '^0x[a-fA-F0-9]{64}$'
+          example: "0x3a8f5c2d1e9b4a7f6c8d2e1a3b5c7d9e0f2a4b6c8d0e2f4a6b8c0d2e4f6a8b0c2"
+        onchainHash:
+          type: string
+          description: Hash retrieved from blockchain (null if not published)
+          nullable: true
+          pattern: '^0x[a-fA-F0-9]{64}$'
+          example: "0x3a8f5c2d1e9b4a7f6c8d2e1a3b5c7d9e0f2a4b6c8d0e2f4a6b8c0d2e4f6a8b0c2"
+        txHash:
+          type: string
+          description: Blockchain transaction hash (null if not published)
+          nullable: true
+          pattern: '^0x[a-fA-F0-9]{64}$'
+          example: "0x1234567890abcdef1234567890abcdef1234567890abcdef1234567890abcdef"
+        mismatchReason:
+          type: string
+          description: Reason for verification failure (null if verified)
+          nullable: true
+          example: "Hash mismatch: off-chain and on-chain hashes do not match"
+        attestation:
+          type: object
+          description: Summary of attestation data (optional, for display purposes)
+          nullable: true
+          properties:
+            productName:
+              type: string
+            supplementType:
+              type: string
+            manufacturer:
+              type: string
+            productionDate:
+              type: string
+              format: date
+
+    Error:
+      type: object
+      required:
+        - error
+      properties:
+        error:
+          type: object
+          required:
+            - code
+            - message
+          properties:
+            code:
+              type: string
+              description: Machine-readable error code
+              example: "BATCH_NOT_FOUND"
+            message:
+              type: string
+              description: Human-readable error message
+              example: "Batch 'VA-2025-0001' not found"
+            details:
+              type: object
+              description: Additional error details (optional)
+              additionalProperties: true
+              nullable: true
+
+  responses:
+    BadRequest:
+      description: Invalid request parameters
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+          examples:
+            invalid:
+              summary: Invalid request
+              value:
+                error:
+                  code: "INVALID_REQUEST"
+                  message: "Invalid batch ID format"
+
+    Unauthorized:
+      description: Missing or invalid API key
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+          examples:
+            missingKey:
+              summary: Missing API key
+              value:
+                error:
+                  code: "UNAUTHORIZED"
+                  message: "Missing or invalid X-API-Key header"
+            invalidKey:
+              summary: Invalid API key
+              value:
+                error:
+                  code: "UNAUTHORIZED"
+                  message: "Invalid API key"
+
+    NotFound:
+      description: Resource not found
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+          examples:
+            notFound:
+              summary: Resource not found
+              value:
+                error:
+                  code: "NOT_FOUND"
+                  message: "Resource not found"
+
+    InternalServerError:
+      description: Internal server error
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+          examples:
+            serverError:
+              summary: Internal error
+              value:
+                error:
+                  code: "INTERNAL_ERROR"
+                  message: "An internal error occurred"
+
