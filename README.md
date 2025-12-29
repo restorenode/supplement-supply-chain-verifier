@@ -138,6 +138,17 @@ Or use the helper script (reads `ADMIN_API_KEY` from `./.env` if set):
 ./backend/scripts/run_integration_tests.sh
 ```
 
+## Live Demo
+
+- Frontend URL:
+- Backend URL:
+- Contract address:
+- Chain RPC:
+
+## How to deploy
+
+See `DEPLOYMENT.md` for the recommended deployment steps.
+
 ## CI/CD
 
 ### CI (GitHub Actions)
