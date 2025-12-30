@@ -1,5 +1,9 @@
 # Supplement Supply Chain Verification Protocol
 
+## Demo Video
+
+<img src="docs/media/supplement-verification.gif" alt="Supplement verification demo" width="720" />
+
 ## Problem Statement
 
 The supplement industry faces significant challenges with product authenticity, quality verification,
