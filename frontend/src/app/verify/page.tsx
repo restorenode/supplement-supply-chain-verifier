@@ -5,7 +5,13 @@ import Button from "@/components/Button";
 import Card from "@/components/Card";
 import Field from "@/components/Field";
 import Input from "@/components/Input";
+import VerificationBadge from "@/components/VerificationBadge";
 import { verifyBatch, VerificationResult } from "@/lib/api";
+
+function truncateHash(value: string) {
+  if (value.length <= 12) return value;
+  return `${value.slice(0, 6)}…${value.slice(-4)}`;
+}
 
 export default function VerifyPage() {
   const [batchId, setBatchId] = useState("");
@@ -27,6 +33,14 @@ export default function VerifyPage() {
     }
   }
 
+  const badgeStatus = result
+    ? result.verified
+      ? "verified"
+      : result.mismatchReason
+        ? "mismatch"
+        : "unverified"
+    : null;
+
   return (
     <div className="grid grid-2">
       <Card title="Verify a batch">
@@ -36,25 +50,38 @@ export default function VerifyPage() {
         <Button onClick={handleVerify} disabled={!batchId || loading}>
           {loading ? "Verifying..." : "Verify"}
         </Button>
-        {error ? <p>{error}</p> : null}
+        {error ? <p className="message error">{error}</p> : null}
       </Card>
       <Card title="Verification Result">
-        {result ? (
+        {loading ? (
+          <p>Checking the registry and hashes...</p>
+        ) : result ? (
           <div className="result stack">
-            <div>
-              <strong>Status:</strong> {result.verified ? "Verified" : "Unverified"}
-            </div>
+            {badgeStatus ? <VerificationBadge status={badgeStatus} /> : null}
             <div>
               <strong>Off-chain Hash:</strong>
-              <div className="code-block">{result.offchainHash}</div>
+              <div className="hash-block" title={result.offchainHash}>
+                {truncateHash(result.offchainHash)}
+              </div>
             </div>
             <div>
               <strong>On-chain Hash:</strong>
-              <div className="code-block">{result.onchainHash ?? "Not published"}</div>
+              {result.onchainHash ? (
+                <div className="hash-block" title={result.onchainHash}>
+                  {truncateHash(result.onchainHash)}
+                </div>
+              ) : (
+                <div className="hash-block muted">Not published</div>
+              )}
             </div>
             <div>
               <strong>Reason:</strong> {result.mismatchReason ?? "Hashes match"}
             </div>
+            {result.txHash ? (
+              <div>
+                <strong>Transaction:</strong> <a href={result.txHash} className="tx-link">{truncateHash(result.txHash)}</a>
+              </div>
+            ) : null}
           </div>
         ) : (
           <p>Submit a batch ID to see verification details.</p>
