@@ -8,6 +8,8 @@ import Input from "@/components/Input";
 import VerificationBadge from "@/components/VerificationBadge";
 import { verifyBatch, VerificationResult } from "@/lib/api";
 
+const explorerBase = (process.env.NEXT_PUBLIC_TX_EXPLORER_BASE_URL || "").replace(/\/$/, "");
+
 function truncateHash(value: string) {
   if (value.length <= 12) return value;
   return `${value.slice(0, 6)}…${value.slice(-4)}`;
@@ -79,7 +81,14 @@ export default function VerifyPage() {
             </div>
             {result.txHash ? (
               <div>
-                <strong>Transaction:</strong> <a href={result.txHash} className="tx-link">{truncateHash(result.txHash)}</a>
+                <strong>Transaction:</strong>
+                {explorerBase ? (
+                  <a href={`${explorerBase}/${result.txHash}`} className="tx-link" target="_blank" rel="noreferrer">
+                    {truncateHash(result.txHash)}
+                  </a>
+                ) : (
+                  <div className="hash-block" title={result.txHash}>{truncateHash(result.txHash)}</div>
+                )}
               </div>
             ) : null}
           </div>

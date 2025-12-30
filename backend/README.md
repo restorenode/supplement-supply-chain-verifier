@@ -22,16 +22,22 @@ Copy `.env.example` to `.env` and update values as needed. Required variables:
 - `DATABASE_URL`
 - `ADMIN_API_KEY`
 - `ENV` (`dev`, `test`, `prod`)
+- `CHAIN_MODE` (`real` or `mock`)
+- `LLM_PROVIDER` (`mock` or `openai`)
+- `CHAIN_NAME` (optional label stored with published batches)
+
+Only required when `CHAIN_MODE=real`:
+
 - `CHAIN_RPC_URL`
 - `CONTRACT_ADDRESS`
 - `PUBLISHER_PRIVATE_KEY`
 - `CHAIN_ID`
-- `CHAIN_NAME` (optional label stored with published batches)
-- `CHAIN_MODE` (`real` or `mock`)
-- `LLM_PROVIDER` (`mock` or `openai`)
-- `LLM_BASE_URL` (required for `openai`)
-- `LLM_API_KEY` (required for `openai`)
-- `LLM_MODEL` (required for `openai`)
+
+Only required when `LLM_PROVIDER=openai`:
+
+- `LLM_BASE_URL`
+- `LLM_API_KEY`
+- `LLM_MODEL`
 
 ## Run the app
 

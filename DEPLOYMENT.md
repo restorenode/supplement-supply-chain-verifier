@@ -58,3 +58,4 @@ Backend (Render):
 
 Frontend (Vercel):
 - `NEXT_PUBLIC_API_BASE_URL`
+- `NEXT_PUBLIC_TX_EXPLORER_BASE_URL` (optional, explorer base for tx links)

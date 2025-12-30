@@ -14,10 +14,10 @@ info:
     - Public endpoints (verify) require no authentication
 
 servers:
-  - url: http://localhost:3000/api
-    description: Local development server
-  - url: https://api.example.com/api
-    description: Production server (placeholder)
+  - url: http://localhost:8000
+    description: Local backend server
+  - url: https://api.example.com
+    description: Production backend (placeholder)
 
 tags:
   - name: Batch

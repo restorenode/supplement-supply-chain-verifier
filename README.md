@@ -75,7 +75,7 @@ maintain privacy while ensuring data integrity.
 
 ### Frontend
 - Framework: Next.js (React + TypeScript)
-- Styling: Tailwind CSS
+- Styling: Custom CSS (global styles)
 
 ### Backend
 - Runtime: Python + FastAPI
@@ -93,6 +93,13 @@ maintain privacy while ensuring data integrity.
 - Containerization: Docker + Docker Compose
 - Testing: pytest
 
+## Quick start (local)
+
+1) Copy `.env.example` to `.env` and set `ADMIN_API_KEY`.
+2) Start the stack: `docker compose up --build`.
+3) Open http://localhost:3000/admin and paste `ADMIN_API_KEY` from `.env`.
+
+
 ## Backend + Frontend (Docker)
 
 1) Copy `.env.example` to `.env` and fill values:
@@ -109,6 +116,8 @@ docker compose up --build
 
 - Frontend: http://localhost:3000
 - Backend: http://localhost:8000
+- Admin UI: http://localhost:3000/admin (use `ADMIN_API_KEY` from `.env`)
+- Docker Compose runs with `LLM_PROVIDER=mock` and `CHAIN_MODE=mock` by default.
 
 ## Tests
 
@@ -136,6 +145,8 @@ INTEGRATION_API_KEY=$ADMIN_API_KEY \
 python3 -m pytest integration_tests
 ```
 
+INTEGRATION_API_KEY defaults to `ADMIN_API_KEY` from the root `.env`.
+
 Or use the helper script (reads `ADMIN_API_KEY` from `./.env` if set):
 
 ```bash
@@ -150,6 +161,9 @@ Or use the helper script (reads `ADMIN_API_KEY` from `./.env` if set):
 - Chain RPC:
 
 ## How to deploy
+
+Optional frontend env for transaction links:
+- `NEXT_PUBLIC_TX_EXPLORER_BASE_URL` (e.g. https://explorer.example.com/tx)
 
 See `DEPLOYMENT.md` for the recommended deployment steps.
 
