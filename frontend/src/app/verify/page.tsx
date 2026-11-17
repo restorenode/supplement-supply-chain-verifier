@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { FormEvent, useState } from "react";
 import Button from "@/components/Button";
 import Card from "@/components/Card";
 import Field from "@/components/Field";
@@ -21,7 +21,9 @@ export default function VerifyPage() {
   const [error, setError] = useState<string | null>(null);
   const [result, setResult] = useState<VerificationResult | null>(null);
 
-  async function handleVerify() {
+  async function handleVerify(event?: FormEvent<HTMLFormElement>) {
+    event?.preventDefault();
+    if (!batchId.trim() || loading) return;
     setLoading(true);
     setError(null);
     setResult(null);
@@ -35,10 +37,11 @@ export default function VerifyPage() {
     }
   }
 
+  // "mismatch" = an on-chain hash exists but differs; "unverified" = nothing published on-chain.
   const badgeStatus = result
     ? result.verified
       ? "verified"
-      : result.mismatchReason
+      : result.onchainHash
         ? "mismatch"
         : "unverified"
     : null;
@@ -46,13 +49,15 @@ export default function VerifyPage() {
   return (
     <div className="grid grid-2">
       <Card title="Verify a batch">
-        <Field label="Batch ID" hint="Example: VA-2025-0001">
-          <Input value={batchId} onChange={(event) => setBatchId(event.target.value)} />
-        </Field>
-        <Button onClick={handleVerify} disabled={!batchId || loading}>
-          {loading ? "Verifying..." : "Verify"}
-        </Button>
-        {error ? <p className="message error">{error}</p> : null}
+        <form className="stack" onSubmit={handleVerify}>
+          <Field label="Batch ID" hint="Example: VA-2025-0001">
+            <Input value={batchId} onChange={(event) => setBatchId(event.target.value)} />
+          </Field>
+          <Button type="submit" disabled={!batchId.trim() || loading}>
+            {loading ? "Verifying..." : "Verify"}
+          </Button>
+        </form>
+        {error ? <p className="message error" role="alert">{error}</p> : null}
       </Card>
       <Card title="Verification Result">
         {loading ? (

@@ -31,3 +31,12 @@ broadcast/
 node_modules/
 .next/
 .env.local
+
+# OS / editor
+.DS_Store
+
+# Accidental local virtualenvs
+backend/path/
+
+# TypeScript incremental build info
+*.tsbuildinfo

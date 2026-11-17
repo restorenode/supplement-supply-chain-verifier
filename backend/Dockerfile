@@ -7,13 +7,16 @@ ENV PYTHONUNBUFFERED=1
 
 RUN apt-get update && apt-get install -y --no-install-recommends \
     gcc \
-    curl \
   && rm -rf /var/lib/apt/lists/*
 
 COPY requirements.txt ./
 RUN pip install --no-cache-dir -r requirements.txt
 
 COPY . .
+
+# Run as an unprivileged user
+RUN useradd --create-home --uid 10001 app && chown -R app:app /app
+USER app
 
 EXPOSE 8000
 

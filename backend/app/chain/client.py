@@ -34,6 +34,11 @@ _MINIMAL_ABI = [
 class ChainReceipt:
     tx_hash: str
     block_number: int
+    status: int = 1
+
+
+class ChainError(RuntimeError):
+    """Raised when a registry call fails or a publish transaction does not succeed."""
 
 
 class BatchHashRegistryClient:
@@ -82,8 +87,12 @@ class BatchHashRegistryClient:
         return self.w3.to_hex(tx_hash)
 
     def get_receipt(self, tx_hash: str) -> ChainReceipt:
-        receipt = self.w3.eth.wait_for_transaction_receipt(tx_hash)
-        return ChainReceipt(tx_hash=self.w3.to_hex(receipt["transactionHash"]), block_number=receipt["blockNumber"])
+        receipt = self.w3.eth.wait_for_transaction_receipt(tx_hash, timeout=120)
+        return ChainReceipt(
+            tx_hash=self.w3.to_hex(receipt["transactionHash"]),
+            block_number=receipt["blockNumber"],
+            status=receipt.get("status", 1),
+        )
 
     def get(self, batch_id_hash: bytes) -> Optional[bytes]:
         result = self.contract.functions.get(batch_id_hash).call()
@@ -104,7 +113,7 @@ class MockBatchHashRegistryClient:
 
     def publish(self, batch_id_hash: bytes, attestation_hash: bytes) -> str:
         if batch_id_hash == b"\x00" * 32 or attestation_hash == b"\x00" * 32:
-            raise RuntimeError("Invalid hash values")
+            raise ChainError("Invalid hash values")
         if batch_id_hash in self._store:
             if self._store[batch_id_hash] == attestation_hash:
                 existing_tx = self._tx_by_batch.get(batch_id_hash)
@@ -116,7 +125,7 @@ class MockBatchHashRegistryClient:
                 self._receipts[tx_hash] = ChainReceipt(tx_hash=tx_hash, block_number=1)
                 self._tx_by_batch[batch_id_hash] = tx_hash
                 return tx_hash
-            raise RuntimeError("ALREADY_PUBLISHED")
+            raise ChainError("ALREADY_PUBLISHED")
         self._store[batch_id_hash] = attestation_hash
         tx_hash = Web3.to_hex(Web3.keccak(text=f"{batch_id_hash.hex()}:{attestation_hash.hex()}:{time.time()}"))
         self._receipts[tx_hash] = ChainReceipt(tx_hash=tx_hash, block_number=1)

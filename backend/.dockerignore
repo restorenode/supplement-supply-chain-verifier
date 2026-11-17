@@ -1,0 +1,12 @@
+# Keep local secrets, databases, and tooling out of the image
+.env
+.env.*
+!.env.example
+*.db
+.venv/
+path/
+__pycache__/
+*.py[cod]
+.pytest_cache/
+tests/
+integration_tests/

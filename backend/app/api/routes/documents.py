@@ -1,18 +1,38 @@
 from datetime import datetime, timezone
 from hashlib import sha256
+from pathlib import PurePath
 from uuid import uuid4
 
 from fastapi import APIRouter, Depends, File, UploadFile, status
 from sqlalchemy.orm import Session
 
-from app.api.deps import get_db
+from app.api.deps import get_batch_or_404, get_db
+from app.core.config import settings
 from app.core.errors import raise_api_error
 from app.core.security import require_api_key
-from app.models.batch import Batch as BatchModel
+from app.models.batch import BatchStatus
 from app.models.document import Document as DocumentModel
 from app.schemas.document import Document
 
 router = APIRouter()
+
+_PDF_MAGIC = b"%PDF-"
+_CHUNK_SIZE = 1024 * 1024
+
+
+def _read_limited(file: UploadFile, limit: int) -> bytes:
+    chunks: list[bytes] = []
+    total = 0
+    while chunk := file.file.read(_CHUNK_SIZE):
+        total += len(chunk)
+        if total > limit:
+            raise_api_error(
+                status.HTTP_413_REQUEST_ENTITY_TOO_LARGE,
+                "FILE_TOO_LARGE",
+                f"File exceeds the {limit // (1024 * 1024)} MB upload limit",
+            )
+        chunks.append(chunk)
+    return b"".join(chunks)
 
 
 @router.post(
@@ -26,17 +46,30 @@ def upload_document(
     file: UploadFile = File(...),
     db: Session = Depends(get_db),
 ) -> DocumentModel:
-    batch = db.get(BatchModel, batchId)
-    if not batch:
-        raise_api_error(status.HTTP_404_NOT_FOUND, "BATCH_NOT_FOUND", f"Batch '{batchId}' not found")
+    batch = get_batch_or_404(db, batchId)
+    if batch.status == BatchStatus.PUBLISHED:
+        raise_api_error(
+            status.HTTP_409_CONFLICT,
+            "ALREADY_PUBLISHED",
+            "Batch is already published; its documents can no longer change",
+        )
 
-    content = file.file.read()
+    content = _read_limited(file, settings.max_upload_bytes)
+    if not content.startswith(_PDF_MAGIC):
+        raise_api_error(
+            status.HTTP_415_UNSUPPORTED_MEDIA_TYPE,
+            "UNSUPPORTED_FILE_TYPE",
+            "Only PDF lab reports are accepted",
+        )
+
     fingerprint = "0x" + sha256(content).hexdigest()
+    # Keep only the base name of the client-supplied filename and cap its length.
+    filename = PurePath((file.filename or "").replace("\\", "/")).name[:255] or "document.pdf"
     document = DocumentModel(
         document_id=str(uuid4()),
         batch_id=batch.batch_id,
-        filename=file.filename or "document.pdf",
-        content_type=file.content_type or "application/pdf",
+        filename=filename,
+        content_type="application/pdf",
         uploaded_at=datetime.now(timezone.utc),
         data=content,
         fingerprint=fingerprint,

@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import json
+import logging
 from pathlib import Path
 
 import httpx
@@ -9,6 +10,8 @@ from app.core.config import settings
 from app.core.errors import raise_api_error
 from app.schemas.extraction import ExtractionResult, ModelInfo
 
+
+logger = logging.getLogger(__name__)
 
 _PROMPT_PATH = Path(__file__).resolve().parent / "prompts" / "lab_report_extraction.txt"
 
@@ -61,13 +64,18 @@ def extract_lab_report(text: str) -> ExtractionResult:
     headers = {"Authorization": f"Bearer {settings.llm_api_key}"}
     url = settings.llm_base_url.rstrip("/") + "/chat/completions"
 
-    with httpx.Client(timeout=60) as client:
-        response = client.post(url, headers=headers, json=payload)
-    if response.status_code >= 400:
-        raise_api_error(502, "LLM_ERROR", "LLM request failed", response.text)
-
-    data = response.json()
     try:
+        with httpx.Client(timeout=60) as client:
+            response = client.post(url, headers=headers, json=payload)
+    except httpx.HTTPError as exc:
+        logger.warning("LLM request failed: %s", exc)
+        raise_api_error(502, "LLM_ERROR", "LLM request failed")
+    if response.status_code >= 400:
+        logger.warning("LLM returned HTTP %s: %s", response.status_code, response.text[:500])
+        raise_api_error(502, "LLM_ERROR", f"LLM request failed with HTTP {response.status_code}")
+
+    try:
+        data = response.json()
         content = data["choices"][0]["message"]["content"]
         parsed = json.loads(content)
         return ExtractionResult.model_validate(parsed)

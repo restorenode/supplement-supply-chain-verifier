@@ -1,7 +1,7 @@
 from fastapi import APIRouter, Depends, status
 from sqlalchemy.orm import Session
 
-from app.api.deps import get_db
+from app.api.deps import get_batch_or_404, get_db
 from app.core.errors import raise_api_error
 from app.core.security import require_api_key
 from app.models.batch import Batch as BatchModel, BatchStatus
@@ -42,7 +42,4 @@ def create_batch(payload: BatchCreate, db: Session = Depends(get_db)) -> BatchMo
 
 @router.get("/batches/{batchId}", response_model=Batch, dependencies=[Depends(require_api_key)])
 def get_batch(batchId: str, db: Session = Depends(get_db)) -> BatchModel:
-    batch = db.get(BatchModel, batchId)
-    if not batch:
-        raise_api_error(status.HTTP_404_NOT_FOUND, "BATCH_NOT_FOUND", f"Batch '{batchId}' not found")
-    return batch
+    return get_batch_or_404(db, batchId)

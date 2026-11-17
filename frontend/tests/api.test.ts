@@ -16,8 +16,7 @@ describe("api client", () => {
         mismatchReason: null
       })
     });
-    // @ts-expect-error test override
-    global.fetch = fetchSpy;
+    globalThis.fetch = fetchSpy as unknown as typeof fetch;
   });
 
   afterEach(() => {
@@ -28,5 +27,10 @@ describe("api client", () => {
     const result = await verifyBatch("VA-2025-0001");
     expect(fetchSpy).toHaveBeenCalledWith("/batches/VA-2025-0001/verify", { method: "GET" });
     expect(result.verified).toBe(true);
+  });
+
+  it("encodes batch IDs in the URL path", async () => {
+    await verifyBatch("A/B?x=1");
+    expect(fetchSpy).toHaveBeenCalledWith("/batches/A%2FB%3Fx%3D1/verify", { method: "GET" });
   });
 });
