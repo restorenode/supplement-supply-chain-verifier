@@ -12,7 +12,7 @@ source .venv/bin/activate
 Install dependencies:
 
 ```bash
-python3 -m pip install -r requirements.txt
+python3 -m pip install -r requirements-dev.txt  # app deps + pytest
 ```
 
 ## Configuration

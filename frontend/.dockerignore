@@ -1,0 +1,7 @@
+# Keep host builds, deps, and local env files out of the image
+node_modules/
+.next/
+.env
+.env.*
+!.env.example
+tests/

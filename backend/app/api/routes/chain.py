@@ -1,36 +1,39 @@
 import json
+import logging
 from datetime import datetime, timezone
 
 from fastapi import APIRouter, Depends, status
 from fastapi.responses import JSONResponse
 from sqlalchemy.orm import Session
 
-from app.api.deps import get_db
+from app.api.deps import get_batch_or_404, get_db, get_extraction_or_404
 from app.chain.deps import get_chain_client
-from app.chain.hashing import build_attestation_json, hash_attestation, hash_batch_id
+from app.chain.hashing import compute_attestation_hash, hash_batch_id
 from app.core.config import settings
 from app.core.errors import raise_api_error
 from app.core.security import require_api_key
-from app.models.batch import Batch as BatchModel, BatchStatus
-from app.models.extraction import Extraction as ExtractionModel
-from app.schemas.extraction import ExtractionResult
+from app.models.batch import BatchStatus
+
+logger = logging.getLogger(__name__)
 
 router = APIRouter()
 
 
+def _iso_utc(value: datetime | None) -> str | None:
+    if value is None:
+        return None
+    if value.tzinfo is None:
+        value = value.replace(tzinfo=timezone.utc)
+    return value.isoformat()
+
+
 @router.get("/batches/{batchId}/attestation", dependencies=[Depends(require_api_key)])
 def get_attestation(batchId: str, db: Session = Depends(get_db)) -> JSONResponse:
-    batch = db.get(BatchModel, batchId)
-    if not batch:
-        raise_api_error(status.HTTP_404_NOT_FOUND, "BATCH_NOT_FOUND", f"Batch '{batchId}' not found")
-
-    extraction = db.get(ExtractionModel, batchId)
-    if not extraction:
-        raise_api_error(status.HTTP_404_NOT_FOUND, "NOT_FOUND", "Resource not found")
-
-    extraction_result = ExtractionResult.model_validate(extraction.extracted_fields)
-    canonical_json = build_attestation_json(batch, extraction_result, extraction.document_fingerprint)
-    canonical_hash = hash_attestation(canonical_json)
+    batch = get_batch_or_404(db, batchId)
+    extraction = get_extraction_or_404(db, batchId)
+    canonical_json, canonical_hash = compute_attestation_hash(
+        batch, extraction.extracted_fields, extraction.document_fingerprint
+    )
 
     return JSONResponse(
         status_code=status.HTTP_200_OK,
@@ -38,12 +41,12 @@ def get_attestation(batchId: str, db: Session = Depends(get_db)) -> JSONResponse
             "batchId": batch.batch_id,
             "canonicalJson": json.loads(canonical_json),
             "canonicalJsonHash": f"0x{canonical_hash.hex()}",
-            "createdAt": extraction.extracted_at.replace(tzinfo=timezone.utc).isoformat(),
+            "createdAt": _iso_utc(extraction.extracted_at),
             "published": batch.status == BatchStatus.PUBLISHED,
             "chain": batch.chain or settings.chain_name,
             "txHash": batch.tx_hash,
             "publisherAddress": batch.publisher_address,
-            "publishedAt": batch.published_at.replace(tzinfo=timezone.utc).isoformat() if batch.published_at else None,
+            "publishedAt": _iso_utc(batch.published_at),
         },
     )
 
@@ -54,9 +57,9 @@ def publish_attestation(
     db: Session = Depends(get_db),
     chain_client=Depends(get_chain_client),
 ) -> JSONResponse:
-    batch = db.get(BatchModel, batchId)
-    if not batch:
-        raise_api_error(status.HTTP_404_NOT_FOUND, "BATCH_NOT_FOUND", f"Batch '{batchId}' not found")
+    batch = get_batch_or_404(db, batchId)
+    if batch.status == BatchStatus.PUBLISHED:
+        raise_api_error(status.HTTP_409_CONFLICT, "ALREADY_PUBLISHED", f"Batch '{batchId}' is already published")
     if batch.status != BatchStatus.READY:
         raise_api_error(
             status.HTTP_400_BAD_REQUEST,
@@ -64,23 +67,42 @@ def publish_attestation(
             "Attestation data not available. Extract data first.",
         )
 
-    batch_id_hash = hash_batch_id(batch.batch_id)
-    extraction = db.get(ExtractionModel, batchId)
-    if not extraction:
-        raise_api_error(status.HTTP_404_NOT_FOUND, "NOT_FOUND", "Resource not found")
+    extraction = get_extraction_or_404(db, batchId)
+    _canonical_json, attestation_hash = compute_attestation_hash(
+        batch, extraction.extracted_fields, extraction.document_fingerprint
+    )
 
-    extraction_result = ExtractionResult.model_validate(extraction.extracted_fields)
-    canonical_json = build_attestation_json(batch, extraction_result, extraction.document_fingerprint)
-    attestation_hash = hash_attestation(canonical_json)
+    try:
+        tx_hash = chain_client.publish(hash_batch_id(batch.batch_id), attestation_hash)
+        receipt = chain_client.get_receipt(tx_hash)
+    except Exception as exc:
+        logger.exception("Publishing batch %s to chain failed", batchId)
+        if "ALREADY_PUBLISHED" in str(exc):
+            raise_api_error(
+                status.HTTP_409_CONFLICT,
+                "ALREADY_PUBLISHED",
+                "An attestation for this batch already exists on-chain",
+            )
+        raise_api_error(
+            status.HTTP_502_BAD_GATEWAY,
+            "BLOCKCHAIN_ERROR",
+            "Failed to publish attestation to blockchain",
+        )
 
-    tx_hash = chain_client.publish(batch_id_hash, attestation_hash)
-    receipt = chain_client.get_receipt(tx_hash)
+    if receipt.status != 1:
+        raise_api_error(
+            status.HTTP_502_BAD_GATEWAY,
+            "BLOCKCHAIN_ERROR",
+            "Publish transaction reverted on-chain",
+            {"txHash": receipt.tx_hash},
+        )
 
+    published_at = datetime.now(timezone.utc)
     batch.status = BatchStatus.PUBLISHED
-    batch.tx_hash = tx_hash
+    batch.tx_hash = receipt.tx_hash
     batch.chain = settings.chain_name
     batch.publisher_address = chain_client.publisher_address
-    batch.published_at = datetime.now(timezone.utc)
+    batch.published_at = published_at
     db.commit()
 
     return JSONResponse(
@@ -89,6 +111,6 @@ def publish_attestation(
             "batchId": batch.batch_id,
             "txHash": receipt.tx_hash,
             "blockNumber": receipt.block_number,
-            "publishedAt": batch.published_at.isoformat(),
+            "publishedAt": published_at.isoformat(),
         },
     )

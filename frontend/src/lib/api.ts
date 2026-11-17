@@ -71,6 +71,10 @@ export type VerificationResult = {
 
 const BASE_URL = (process.env.NEXT_PUBLIC_API_BASE_URL || "").replace(/\/$/, "");
 
+function batchPath(batchId: string, suffix = "") {
+  return `/batches/${encodeURIComponent(batchId)}${suffix}`;
+}
+
 function buildUrl(path: string) {
   if (!BASE_URL) return path;
   return `${BASE_URL}${path}`;
@@ -107,7 +111,7 @@ export function createBatch(payload: BatchCreate, apiKey: string) {
 export function uploadDocument(batchId: string, file: File, apiKey: string) {
   const formData = new FormData();
   formData.append("file", file);
-  return request<Record<string, unknown>>(`/batches/${batchId}/documents`, {
+  return request<Record<string, unknown>>(batchPath(batchId, "/documents"), {
     method: "POST",
     headers: {
       "X-API-Key": apiKey
@@ -117,7 +121,7 @@ export function uploadDocument(batchId: string, file: File, apiKey: string) {
 }
 
 export function extractBatch(batchId: string, apiKey: string) {
-  return request<ExtractionResponse>(`/batches/${batchId}/extract`, {
+  return request<ExtractionResponse>(batchPath(batchId, "/extract"), {
     method: "POST",
     headers: {
       "X-API-Key": apiKey
@@ -126,7 +130,7 @@ export function extractBatch(batchId: string, apiKey: string) {
 }
 
 export function getAttestation(batchId: string, apiKey: string) {
-  return request<Attestation>(`/batches/${batchId}/attestation`, {
+  return request<Attestation>(batchPath(batchId, "/attestation"), {
     headers: {
       "X-API-Key": apiKey
     }
@@ -134,7 +138,7 @@ export function getAttestation(batchId: string, apiKey: string) {
 }
 
 export function publishBatch(batchId: string, apiKey: string) {
-  return request<Record<string, unknown>>(`/batches/${batchId}/publish`, {
+  return request<Record<string, unknown>>(batchPath(batchId, "/publish"), {
     method: "POST",
     headers: {
       "X-API-Key": apiKey
@@ -143,7 +147,7 @@ export function publishBatch(batchId: string, apiKey: string) {
 }
 
 export function verifyBatch(batchId: string) {
-  return request<VerificationResult>(`/batches/${batchId}/verify`, {
+  return request<VerificationResult>(batchPath(batchId, "/verify"), {
     method: "GET"
   });
 }
