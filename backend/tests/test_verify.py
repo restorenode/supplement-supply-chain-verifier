@@ -68,6 +68,7 @@ def test_verify_true_when_hashes_match(client):
     assert response.status_code == 200
     data = response.json()
     assert data["verified"] is True
+    assert data["status"] == "verified"
     assert data["onchainHash"] == data["offchainHash"]
 
 
@@ -81,4 +82,5 @@ def test_verify_false_when_hashes_mismatch(client):
     assert response.status_code == 200
     data = response.json()
     assert data["verified"] is False
+    assert data["status"] == "mismatch"
     assert data["mismatchReason"]

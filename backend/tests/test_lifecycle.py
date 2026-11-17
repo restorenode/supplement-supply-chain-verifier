@@ -97,6 +97,7 @@ def test_full_publish_and_verify_flow(client, mock_chain):
 
     not_yet = client.get(f"/batches/{batch_id}/verify").json()
     assert not_yet["verified"] is False
+    assert not_yet["status"] == "unpublished"
     assert not_yet["onchainHash"] is None
 
     publish = client.post(f"/batches/{batch_id}/publish", headers=HEADERS)
@@ -105,7 +106,17 @@ def test_full_publish_and_verify_flow(client, mock_chain):
 
     verify = client.get(f"/batches/{batch_id}/verify").json()
     assert verify["verified"] is True
+    assert verify["status"] == "verified"
     assert verify["txHash"] == publish.json()["txHash"]
+    assert verify["publishedAt"].endswith(("Z", "+00:00"))
+    assert verify["product"] == {
+        "productName": "Vitamin A 10,000 IU",
+        "manufacturer": "PureSupplements Inc.",
+        "supplementType": "Vitamin A",
+        "productionDate": "2025-01-15",
+        "expiresDate": None,
+    }
+    assert verify["labReport"]["analytes"] == []
 
     attestation = client.get(f"/batches/{batch_id}/attestation", headers=HEADERS).json()
     assert attestation["published"] is True
@@ -161,3 +172,25 @@ def test_chain_outage_returns_502(client):
 
     assert client.post("/batches/VA-CHAIN-2/publish", headers=HEADERS).status_code == 502
     assert client.get("/batches/VA-CHAIN-2/verify").status_code == 502
+
+
+def test_verify_registered_batch_without_extraction_is_unpublished(client):
+    client.post("/batches", json=_batch_payload("VA-VERIFY-1"), headers=HEADERS)
+    response = client.get("/batches/VA-VERIFY-1/verify")
+    assert response.status_code == 200
+    data = response.json()
+    assert data["status"] == "unpublished"
+    assert data["offchainHash"] is None
+    assert data["labReport"] is None
+    assert data["product"]["productName"] == "Vitamin A 10,000 IU"
+
+
+def test_verify_unknown_batch_is_404(client):
+    response = client.get("/batches/NOPE-1/verify")
+    assert response.status_code == 404
+    assert response.json()["error"]["code"] == "BATCH_NOT_FOUND"
+
+
+def test_auth_check(client):
+    assert client.get("/auth/check", headers=HEADERS).json() == {"ok": True}
+    assert client.get("/auth/check", headers={"X-API-Key": "nope"}).status_code == 401
