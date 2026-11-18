@@ -797,27 +797,67 @@ components:
           nullable: true
           example: "2025-01-20T10:45:00Z"
 
+    Analyte:
+      type: object
+      properties:
+        name: { type: string, nullable: true }
+        result: { type: string, nullable: true }
+        unit: { type: string, nullable: true }
+        limit: { type: string, nullable: true }
+        status: { type: string, enum: [PASS, FAIL, UNKNOWN] }
     VerificationResult:
       type: object
       required:
         - verified
+        - status
         - batchId
-        - offchainHash
-        - onchainHash
-        - txHash
-        - mismatchReason
+        - product
       properties:
         verified:
           type: boolean
           description: Whether the batch attestation is verified (hashes match and on-chain exists)
           example: true
+        status:
+          type: string
+          enum: [verified, mismatch, unpublished]
+          description: |
+            verified = hashes match; mismatch = an on-chain hash exists but differs;
+            unpublished = nothing on-chain yet (or lab data not processed yet).
+        chain:
+          type: string
+          nullable: true
+          example: "initia-evm"
+        publishedAt:
+          type: string
+          format: date-time
+          nullable: true
+        product:
+          type: object
+          description: Public product details registered for the batch
+          properties:
+            productName: { type: string }
+            manufacturer: { type: string }
+            supplementType: { type: string }
+            productionDate: { type: string, format: date }
+            expiresDate: { type: string, format: date, nullable: true }
+        labReport:
+          type: object
+          nullable: true
+          description: Lab data extracted from the Certificate of Analysis (null until extracted)
+          properties:
+            labName: { type: string, nullable: true }
+            reportDate: { type: string, format: date, nullable: true }
+            analytes: { type: array, items: { $ref: '#/components/schemas/Analyte' } }
+            contaminants: { type: array, items: { $ref: '#/components/schemas/Analyte' } }
+            methods: { type: array, items: { type: string } }
         batchId:
           type: string
           description: Batch identifier
           example: "VA-2025-0001"
         offchainHash:
           type: string
-          description: Hash computed from off-chain canonical JSON
+          nullable: true
+          description: Keccak-256 hash computed from off-chain canonical JSON (null until extracted)
           pattern: '^0x[a-fA-F0-9]{64}$'
           example: "0x3a8f5c2d1e9b4a7f6c8d2e1a3b5c7d9e0f2a4b6c8d0e2f4a6b8c0d2e4f6a8b0c2"
         onchainHash:

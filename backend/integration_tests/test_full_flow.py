@@ -55,9 +55,9 @@ def test_full_flow():
         if create.status_code not in (201, 409):
             assert False, f"Create failed: {create.status_code} {create.text}"
 
-        pdf_path = Path(__file__).resolve().parents[1] / "tests" / "fixtures" / "sample.pdf"
+        pdf_path = Path(__file__).resolve().parents[1] / "tests" / "fixtures" / "sample_coa.pdf"
         with pdf_path.open("rb") as handle:
-            files = {"file": ("sample.pdf", handle, "application/pdf")}
+            files = {"file": ("sample_coa.pdf", handle, "application/pdf")}
             upload = client.post(f"{BASE_URL}/batches/{batch_id}/documents", files=files, headers=headers)
             assert upload.status_code == 201
 

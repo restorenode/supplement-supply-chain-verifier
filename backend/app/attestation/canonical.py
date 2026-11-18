@@ -21,7 +21,7 @@ def build_canonical_attestation(
         "productionDate": batch.production_date.isoformat(),
         "expiresDate": batch.expires_date.isoformat() if batch.expires_date else None,
         "documentFingerprint": document_fingerprint,
-        "extractedFields": extraction.model_dump(by_alias=True),
+        "extractedFields": extraction.model_dump(by_alias=True, mode="json"),
         "schemaVersion": SCHEMA_VERSION,
     }
 

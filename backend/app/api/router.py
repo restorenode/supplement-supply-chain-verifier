@@ -1,9 +1,10 @@
 from fastapi import APIRouter
 
-from app.api.routes import ai, batches, chain, documents, health, verify
+from app.api.routes import ai, auth, batches, chain, documents, health, verify
 
 api_router = APIRouter()
 api_router.include_router(health.router, tags=["health"])
+api_router.include_router(auth.router, tags=["auth"])
 api_router.include_router(batches.router, tags=["batches"])
 api_router.include_router(documents.router, tags=["documents"])
 api_router.include_router(ai.router, tags=["ai"])
