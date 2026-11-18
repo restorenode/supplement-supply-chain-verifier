@@ -511,7 +511,12 @@ export default function AdminClient() {
                       {effective[1] === "busy" ? <span className="dot pulse" /> : null}
                       {cta(1)}
                     </button>
-                    <span className="actions__note">The PDF is stored off-chain.</span>
+                    <span className="actions__note">
+                      The PDF is stored off-chain. Need a test file?{" "}
+                      <a href="/samples/sample-coa.pdf" download="sample-coa.pdf">
+                        Download the sample COA
+                      </a>
+                    </span>
                   </div>
                 </>
               )}

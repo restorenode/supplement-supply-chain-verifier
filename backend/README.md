@@ -23,7 +23,7 @@ Copy `.env.example` to `.env` and update values as needed. Required variables:
 - `ADMIN_API_KEY`
 - `ENV` (`dev`, `test`, `prod`)
 - `CHAIN_MODE` (`real` or `mock`)
-- `LLM_PROVIDER` (`mock` or `openai`)
+- `LLM_PROVIDER` (`mock`, `demo` or `openai`)
 - `CHAIN_NAME` (optional label stored with published batches)
 
 Only required when `CHAIN_MODE=real`:
@@ -69,6 +69,15 @@ Verification recomputes the canonical JSON hash for the batch, reads the on-chai
 
 `/batches/{batchId}/extract` reads the latest uploaded PDF, extracts text, and runs the LLM extractor.
 The mock provider returns empty fields with low confidence for deterministic tests.
+
+The demo provider (`LLM_PROVIDER=demo`) is a free, offline, rule-based parser for local demos. It
+reads text-based Certificates of Analysis whose result rows end in a status (PASS / FAIL / CONFORMS),
+such as the bundled sample `tests/fixtures/sample_coa.pdf` (a fictional COA, clearly marked as a
+sample). Regenerate or customise it with:
+
+```bash
+python scripts/generate_sample_coa.py --batch-id TEST-2026-0001
+```
 
 To use the mock extractor:
 

@@ -14,8 +14,8 @@ def test_extract_marks_batch_ready_and_stores_extraction(client):
     create_response = client.post("/batches", json=payload, headers=headers)
     assert create_response.status_code == 201
 
-    pdf_bytes = (Path(__file__).parent / "fixtures" / "sample.pdf").read_bytes()
-    files = {"file": ("sample.pdf", pdf_bytes, "application/pdf")}
+    pdf_bytes = (Path(__file__).parent / "fixtures" / "sample_coa.pdf").read_bytes()
+    files = {"file": ("sample_coa.pdf", pdf_bytes, "application/pdf")}
     upload_response = client.post(f"/batches/{payload['batchId']}/documents", files=files, headers=headers)
     assert upload_response.status_code == 201
 
@@ -42,8 +42,8 @@ def test_attestation_hash_stable(client):
 
     client.post("/batches", json=payload, headers=headers)
 
-    pdf_bytes = (Path(__file__).parent / "fixtures" / "sample.pdf").read_bytes()
-    files = {"file": ("sample.pdf", pdf_bytes, "application/pdf")}
+    pdf_bytes = (Path(__file__).parent / "fixtures" / "sample_coa.pdf").read_bytes()
+    files = {"file": ("sample_coa.pdf", pdf_bytes, "application/pdf")}
     client.post(f"/batches/{payload['batchId']}/documents", files=files, headers=headers)
     client.post(f"/batches/{payload['batchId']}/extract", headers=headers)
 

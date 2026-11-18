@@ -30,7 +30,7 @@ def run_extraction(db: Session, batch: Batch) -> Tuple[ExtractionResult, dict, d
     extracted_at = datetime.now(timezone.utc)
 
     existing = db.get(Extraction, batch.batch_id)
-    payload = extraction.model_dump(by_alias=True)
+    payload = extraction.model_dump(by_alias=True, mode="json")
     if existing:
         existing.extracted_fields = payload
         existing.model_info = model_info

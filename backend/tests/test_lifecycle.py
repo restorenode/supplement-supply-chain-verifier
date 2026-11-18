@@ -7,7 +7,7 @@ from app.chain.deps import get_chain_client
 from app.core import config
 
 HEADERS = {"X-API-Key": "test-key"}
-PDF_BYTES = (Path(__file__).parent / "fixtures" / "sample.pdf").read_bytes()
+PDF_BYTES = (Path(__file__).parent / "fixtures" / "sample_coa.pdf").read_bytes()
 
 
 def _batch_payload(batch_id: str, **overrides) -> dict:
@@ -22,7 +22,7 @@ def _batch_payload(batch_id: str, **overrides) -> dict:
     return payload
 
 
-def _upload(client, batch_id: str, content: bytes = PDF_BYTES, filename: str = "sample.pdf"):
+def _upload(client, batch_id: str, content: bytes = PDF_BYTES, filename: str = "sample_coa.pdf"):
     files = {"file": (filename, content, "application/pdf")}
     return client.post(f"/batches/{batch_id}/documents", files=files, headers=HEADERS)
 

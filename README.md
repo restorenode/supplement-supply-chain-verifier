@@ -84,7 +84,7 @@ maintain privacy while ensuring data integrity.
 
 ### AI/ML
 - PDF processing and extraction via server-side pipeline
-- LLM provider configurable; mock provider available for deterministic tests
+- LLM provider configurable; mock provider for deterministic tests, demo provider (offline rule-based parser) for local demos with the sample COA in `backend/tests/fixtures/sample_coa.pdf`
 
 ### Blockchain
 - Registry client with mock mode for local and integration tests

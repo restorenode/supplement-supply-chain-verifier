@@ -6,6 +6,7 @@ from pathlib import Path
 
 import httpx
 
+from app.ai.demo_extractor import extract_demo
 from app.core.config import settings
 from app.core.errors import raise_api_error
 from app.schemas.extraction import ExtractionResult, ModelInfo
@@ -21,8 +22,11 @@ def _load_prompt() -> str:
 
 
 def get_model_info() -> ModelInfo:
-    if settings.llm_provider == "mock":
+    provider = settings.llm_provider.lower()
+    if provider == "mock":
         return ModelInfo(model_name="mock", version="0")
+    if provider == "demo":
+        return ModelInfo(model_name="demo-parser", version="1")
     return ModelInfo(model_name=settings.llm_model or "openai-compatible", version="v1")
 
 
@@ -41,6 +45,9 @@ def extract_lab_report(text: str) -> ExtractionResult:
             notes=None,
             confidence=0.1,
         )
+
+    if provider == "demo":
+        return extract_demo(text)
 
     if provider != "openai":
         raise_api_error(400, "INVALID_LLM_PROVIDER", f"Unsupported LLM_PROVIDER '{settings.llm_provider}'")
