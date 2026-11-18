@@ -27,6 +27,20 @@ def _iso_utc(value: datetime | None) -> str | None:
     return value.isoformat()
 
 
+@router.get("/chain/info")
+def chain_info() -> dict:
+    """Public registry details for display (network name, registry contract). No secrets."""
+    mock = settings.chain_mode.lower() == "mock"
+    address = settings.contract_address.strip().lower() or None
+    return {
+        "chainName": settings.chain_name,
+        "chainId": settings.chain_id or None,
+        "mode": "mock" if mock else "real",
+        # In mock mode nothing is written to the configured contract, so don't advertise it.
+        "contractAddress": None if mock else address,
+    }
+
+
 @router.get("/batches/{batchId}/attestation", dependencies=[Depends(require_api_key)])
 def get_attestation(batchId: str, db: Session = Depends(get_db)) -> JSONResponse:
     batch = get_batch_or_404(db, batchId)

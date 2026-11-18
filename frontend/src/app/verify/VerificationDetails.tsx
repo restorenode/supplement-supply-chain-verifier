@@ -54,8 +54,7 @@ function HashComparison({ offchain, onchain }: { offchain: string; onchain: stri
         </div>
       </div>
       <p className="muted" style={{ fontSize: 13, maxWidth: 720, textWrap: "pretty" }}>
-        Keccak-256 turns the lab data into a fixed 64-character fingerprint. Changing even one value in the report
-        produces a completely different hash.
+        A fingerprint is 64 hexadecimal characters. Altering any single value in the record changes it entirely.
       </p>
     </div>
   );
@@ -89,7 +88,7 @@ export default function VerificationDetails({ result }: { result: VerificationRe
                 }}
               >
                 <AlertIcon size={11} />
-                UNVERIFIED
+                UNCONFIRMED
               </span>
             ) : null}
           </header>
@@ -124,7 +123,7 @@ export default function VerificationDetails({ result }: { result: VerificationRe
                 Lab results
               </h4>
               <span className="label" style={{ fontSize: 10.5 }}>
-                EXTRACTED FROM COA
+                CERTIFICATE OF ANALYSIS
               </span>
             </header>
             {rows.length ? (
@@ -156,7 +155,7 @@ export default function VerificationDetails({ result }: { result: VerificationRe
               </div>
             ) : (
               <p className="card__body muted" style={{ fontSize: 14 }}>
-                No individual test results were extracted from this lab report.
+                No individual results are listed in this certificate.
               </p>
             )}
             {lab?.labName || lab?.reportDate ? (
@@ -178,7 +177,7 @@ export default function VerificationDetails({ result }: { result: VerificationRe
               Proof
             </h4>
             <span className="faint" style={{ fontSize: 13 }}>
-              For technical review
+              Technical record
             </span>
           </div>
           <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
@@ -189,9 +188,9 @@ export default function VerificationDetails({ result }: { result: VerificationRe
 
         <div className="proof__hashes">
           <div className="proof__col">
-            <span className="label">Off-chain hash</span>
-            <span className="proof__sub">Recomputed from the lab data on file</span>
-            <Hash value={result.offchainHash} placeholder="Lab data not processed yet" label="off-chain hash" />
+            <span className="label">Off-chain fingerprint · Keccak-256</span>
+            <span className="proof__sub">Fingerprint of the lab results on file</span>
+            <Hash value={result.offchainHash} placeholder="Not yet extracted" label="computed fingerprint" />
           </div>
           <div className="proof__cmp">
             {status === "verified" ? (
@@ -199,14 +198,14 @@ export default function VerificationDetails({ result }: { result: VerificationRe
                 <span className="cmp__sym" aria-hidden="true">
                   =
                 </span>
-                Hashes match
+                Fingerprints match
               </span>
             ) : status === "mismatch" ? (
               <span className="cmp cmp--bad">
                 <span className="cmp__sym" aria-hidden="true">
                   ≠
                 </span>
-                Hashes differ
+                Fingerprints differ
               </span>
             ) : (
               <span className="cmp cmp--warn">
@@ -218,9 +217,9 @@ export default function VerificationDetails({ result }: { result: VerificationRe
             )}
           </div>
           <div className="proof__col">
-            <span className="label">On-chain hash</span>
-            <span className="proof__sub">Read from the published attestation</span>
-            <Hash value={result.onchainHash} placeholder="Not published" label="on-chain hash" />
+            <span className="label">On-chain fingerprint · Keccak-256</span>
+            <span className="proof__sub">Fingerprint recorded on-chain at publication</span>
+            <Hash value={result.onchainHash} placeholder="Not sealed" label="sealed fingerprint" />
           </div>
         </div>
 
@@ -231,7 +230,7 @@ export default function VerificationDetails({ result }: { result: VerificationRe
         <div className="proof__tx">
           <div className="proof__col">
             <span className="label">Transaction</span>
-            <Hash value={result.txHash} href={explorer} placeholder="No transaction" label="transaction hash" />
+            <Hash value={result.txHash} href={explorer} placeholder="Not sealed" label="transaction hash" />
           </div>
           {result.txHash ? (
             <div className="proof__col" style={{ gap: 4, paddingBottom: 2 }}>

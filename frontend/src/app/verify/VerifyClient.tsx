@@ -61,7 +61,7 @@ export default function VerifyClient() {
         if (err instanceof ApiError && err.status === 404) {
           next = { kind: "notfound" };
         } else {
-          next = { kind: "error", message: err instanceof Error ? err.message : "Verification failed" };
+          next = { kind: "error", message: err instanceof Error ? err.message : "Verification could not be completed. Retry." };
         }
       }
 
@@ -94,7 +94,7 @@ export default function VerifyClient() {
           <div className="label">PUBLIC VERIFICATION</div>
           <h1 className="page-title">Verify a batch</h1>
           <p className="page-lede">
-            Enter the batch ID printed on the bottle. We check its lab data against the record published on-chain.
+            Enter the batch ID from the label. Its lab results are compared against the sealed on-chain record.
           </p>
           <BatchIdForm
             value={input}
@@ -120,7 +120,7 @@ export default function VerifyClient() {
 
       <div className="container results" aria-live="polite" aria-busy={phase.kind === "loading"}>
         <div className="results__head">
-          <h2 className="results__title">Verification result</h2>
+          <h2 className="results__title">Result</h2>
           {phase.kind !== "empty" && batchId ? (
             <span className="mono faint" style={{ fontSize: 12, letterSpacing: "0.04em" }}>
               QUERY · {batchId}
@@ -133,7 +133,7 @@ export default function VerifyClient() {
             <span className="empty-state__icon">
               <SearchIcon />
             </span>
-            <p>Submit a batch ID to see verification details.</p>
+            <p>Enter a batch ID to retrieve its record.</p>
           </div>
         ) : null}
 
@@ -145,7 +145,7 @@ export default function VerifyClient() {
           <div className="banner rise" role="alert">
             <AlertIcon className="banner__icon" />
             <div>
-              <p className="banner__title">We couldn&apos;t complete the check</p>
+              <p className="banner__title">Verification incomplete</p>
               <p className="banner__msg">{phase.message}</p>
               <button type="button" className="btn btn--neutral" style={{ marginTop: 12 }} onClick={() => run(batchId)}>
                 Try again

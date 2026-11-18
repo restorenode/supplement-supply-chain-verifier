@@ -20,14 +20,13 @@ export default function Verdict({ kind, batchId, result, onRetry }: VerdictProps
           <StatusBadge tone="ok" onSurface>
             Verified
           </StatusBadge>
-          <h3 className="verdict__title">This lab data is authentic.</h3>
+          <h3 className="verdict__title">Record intact.</h3>
           <p className="verdict__text">
-            The lab report on file matches the attestation published on-chain. It hasn&apos;t been changed since it was
-            published.
+            The lab results on file match the sealed record exactly. Nothing has changed since publication.
           </p>
           <p className="verdict__meta">
             {batchId}
-            {result?.publishedAt ? ` · ATTESTED ${formatUtc(result.publishedAt)}` : ""}
+            {result?.publishedAt ? ` · SEALED ${formatUtc(result.publishedAt)}` : ""}
           </p>
         </div>
       </div>
@@ -40,16 +39,16 @@ export default function Verdict({ kind, batchId, result, onRetry }: VerdictProps
         <Seal kind="mismatch" />
         <div className="verdict__body">
           <StatusBadge tone="bad" onSurface>
-            Not verified
+            Mismatch
           </StatusBadge>
-          <h3 className="verdict__title">This lab data doesn&apos;t match its on-chain record.</h3>
+          <h3 className="verdict__title">Record altered.</h3>
           <p className="verdict__text">
-            The data on file differs from what was published. Don&apos;t rely on this lab report. Contact the
+            The lab results on file no longer match the sealed record. Do not rely on this report. Contact the
             manufacturer or retailer.
           </p>
           {result?.mismatchReason ? (
             <p className="verdict__reason">
-              <strong>Reason:</strong> {result.mismatchReason}
+              <strong>Detail:</strong> {result.mismatchReason}
             </p>
           ) : null}
         </div>
@@ -63,16 +62,15 @@ export default function Verdict({ kind, batchId, result, onRetry }: VerdictProps
         <Seal kind="pending" />
         <div className="verdict__body">
           <StatusBadge tone="warn" onSurface>
-            Not published
+            Unsealed
           </StatusBadge>
-          <h3 className="verdict__title">This batch hasn&apos;t been published on-chain yet.</h3>
+          <h3 className="verdict__title">No sealed record yet.</h3>
           <p className="verdict__text">
-            The manufacturer has registered this batch, but there&apos;s no on-chain record to check it against, so its
-            lab data can&apos;t be verified yet.
+            This batch is registered, but its results have not been sealed on-chain. There is nothing to verify against.
           </p>
           {result?.mismatchReason ? (
             <p className="verdict__reason">
-              <strong>Reason:</strong> {result.mismatchReason}
+              <strong>Detail:</strong> {result.mismatchReason}
             </p>
           ) : null}
         </div>
@@ -84,11 +82,11 @@ export default function Verdict({ kind, batchId, result, onRetry }: VerdictProps
     <div className="verdict rise">
       <Seal kind="notfound" />
       <div className="verdict__body">
-        <StatusBadge tone="none">Not found</StatusBadge>
-        <h3 className="verdict__title">No batch found for {batchId}.</h3>
+        <StatusBadge tone="none">No record</StatusBadge>
+        <h3 className="verdict__title">No record for {batchId}.</h3>
         <p className="verdict__text">
-          Check the ID on the label. It&apos;s usually printed near the expiry date and looks like VA-2025-0001. If it
-          still isn&apos;t found, this batch hasn&apos;t been registered.
+          Confirm the ID on the label. It is printed near the expiry date, in the form VA-2025-0001. An ID that cannot
+          be found has not been registered.
         </p>
         {onRetry ? (
           <button type="button" className="btn btn--neutral" style={{ marginTop: 16, height: 40 }} onClick={onRetry}>

@@ -59,8 +59,8 @@ maintain privacy while ensuring data integrity.
 
 ### On-Chain (Attestation Registry)
 - Batch attestations: Minimal registry entries containing:
-  - Batch ID (identifier)
-  - Document hash (SHA-256 hash of PDF)
+  - Batch ID reference (Keccak-256 of the batch ID)
+  - Attestation fingerprint (Keccak-256 of the canonical attestation JSON, which includes the PDF's SHA-256 fingerprint)
   - Publisher address (who attested)
   - Timestamp (when attested)
 - Purpose: Tamper-evident proof that a specific batch was attested at a specific time by a specific entity

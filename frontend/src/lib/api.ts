@@ -130,7 +130,7 @@ async function request<T>(path: string, options: RequestInit): Promise<T> {
   try {
     response = await fetch(buildUrl(path), options);
   } catch {
-    throw new ApiError("Couldn't reach the server. Check your connection and try again.", 0, "NETWORK_ERROR");
+    throw new ApiError("Server unreachable. Check the connection and retry.", 0, "NETWORK_ERROR");
   }
   if (!response.ok) {
     let detail = "Request failed";
@@ -147,6 +147,17 @@ async function request<T>(path: string, options: RequestInit): Promise<T> {
     throw new ApiError(detail, response.status, code);
   }
   return response.json() as Promise<T>;
+}
+
+export type ChainInfo = {
+  chainName: string;
+  chainId: number | null;
+  mode: "real" | "mock";
+  contractAddress: string | null;
+};
+
+export function getChainInfo() {
+  return request<ChainInfo>("/chain/info", { method: "GET" });
 }
 
 export function checkApiKey(apiKey: string) {

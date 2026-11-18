@@ -1,15 +1,15 @@
 import { CheckIcon } from "@/components/icons";
 
 const CHECKS = [
-  { label: "Registry lookup", detail: "Locating the batch record" },
-  { label: "Off-chain record", detail: "Recomputing the Keccak-256 hash of the stored lab data" },
-  { label: "On-chain attestation", detail: "Reading the published hash" },
-  { label: "Comparison", detail: "Matching both hashes" }
+  { label: "Locate record", detail: "Querying the batch registry" },
+  { label: "Recompute fingerprint", detail: "Hashing the lab results on file (Keccak-256)" },
+  { label: "Read sealed record", detail: "Retrieving the on-chain fingerprint" },
+  { label: "Compare", detail: "Testing for an exact match" }
 ];
 
 export const CHECK_COUNT = CHECKS.length;
 
-/** "Checking the registry and hashes..." — a precise check in progress, not a spinner. */
+/** "Verifying record…" — a precise check in progress, not a spinner. */
 export default function VerificationProgress({ step }: { step: number }) {
   const current = Math.min(step, CHECK_COUNT - 1);
   return (
@@ -19,7 +19,7 @@ export default function VerificationProgress({ step }: { step: number }) {
         <div className="progress__scan" />
       </div>
       <div className="checks__head">
-        <p className="checks__title">Checking the registry and hashes...</p>
+        <p className="checks__title">Verifying record…</p>
         <span className="mono faint" style={{ fontSize: 12 }}>
           STEP {current + 1} / {CHECK_COUNT}
         </span>

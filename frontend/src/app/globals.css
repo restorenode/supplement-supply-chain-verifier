@@ -11,6 +11,8 @@
   --sunken: #eff3f3;
   --line: #dce2e3;
   --line2: #c2cbcd;
+  /* Outline of interactive controls: >= 3:1 against bg, surface and sunken (WCAG 1.4.11). */
+  --control-line: #7f8d92;
   --ink: #0d1a1e;
   --ink2: #43535a;
   --ink3: #5e6e75;
@@ -43,6 +45,8 @@
   --sunken: #0a1113;
   --line: #1d2a2f;
   --line2: #2b3b41;
+  /* Outline of interactive controls: >= 3:1 against bg, surface and sunken (WCAG 1.4.11). */
+  --control-line: #55666c;
   --ink: #e3ebed;
   --ink2: #a2b2b8;
   --ink3: #83949a;
@@ -251,15 +255,16 @@ button:disabled {
   justify-content: space-between;
   flex-wrap: wrap;
   gap: 12px 24px;
-  padding-top: 14px;
-  padding-bottom: 14px;
+  min-height: 72px;
+  padding-top: 12px;
+  padding-bottom: 12px;
   max-width: none;
 }
 
 .brand {
   display: flex;
   align-items: center;
-  gap: 10px;
+  gap: 12px;
   text-decoration: none;
   color: var(--ink);
 }
@@ -268,38 +273,22 @@ button:disabled {
   color: var(--ink);
 }
 
-.brand__mark {
-  width: 26px;
-  height: 26px;
-  flex: none;
-  border: 1.5px solid var(--ink);
-  border-radius: 50%;
-  display: grid;
-  place-items: center;
-}
-
-.brand__dot {
-  width: 8px;
-  height: 8px;
-  border-radius: 50%;
-  background: var(--acc);
-}
-
 .brand__text {
   display: flex;
   flex-direction: column;
+  gap: 2px;
   line-height: 1.2;
 }
 
 .brand__name {
   font-weight: 600;
-  font-size: 14px;
-  letter-spacing: -0.01em;
+  font-size: 16px;
+  letter-spacing: -0.015em;
 }
 
 .brand__sub {
   font-family: var(--font-mono);
-  font-size: 10px;
+  font-size: 11px;
   letter-spacing: 0.14em;
   color: var(--ink3);
 }
@@ -311,9 +300,12 @@ button:disabled {
 }
 
 .nav__link {
-  padding: 7px 12px;
+  display: flex;
+  align-items: center;
+  min-height: 40px;
+  padding: 8px 14px;
   border-radius: 8px;
-  font-size: 14px;
+  font-size: 15px;
   font-weight: 500;
   text-decoration: none;
   color: var(--ink2);
@@ -332,17 +324,17 @@ button:disabled {
 
 .nav__divider {
   width: 1px;
-  height: 20px;
+  height: 22px;
   background: var(--line);
-  margin: 0 6px;
+  margin: 0 8px;
 }
 
 .icon-btn {
-  width: 34px;
-  height: 34px;
+  width: 40px;
+  height: 40px;
   display: grid;
   place-items: center;
-  border: 1px solid var(--line);
+  border: 1px solid var(--control-line);
   border-radius: 8px;
   background: transparent;
   color: var(--ink2);
@@ -350,7 +342,7 @@ button:disabled {
 
 .icon-btn:hover {
   color: var(--ink);
-  border-color: var(--line2);
+  border-color: var(--ink3);
 }
 
 .app-footer {
@@ -363,11 +355,51 @@ button:disabled {
   display: flex;
   flex-wrap: wrap;
   justify-content: space-between;
-  gap: 8px;
+  align-items: center;
+  gap: 10px 24px;
   font-family: var(--font-mono);
-  font-size: 11px;
+  font-size: 11.5px;
   letter-spacing: 0.08em;
   color: var(--ink3);
+}
+
+.app-footer__meta {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px 20px;
+}
+
+.app-footer__item {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.app-footer__dot {
+  width: 6px;
+  height: 6px;
+  margin-right: 2px;
+  border-radius: 50%;
+  background: var(--acc);
+}
+
+.app-footer__value {
+  color: var(--ink2);
+}
+
+.app-footer__address {
+  letter-spacing: 0.02em;
+  text-transform: none;
+}
+
+.app-footer__link {
+  color: var(--ink3);
+  text-decoration: none;
+}
+
+.app-footer__link:hover {
+  color: var(--ink);
 }
 
 /* ---------- Buttons ---------- */
@@ -425,7 +457,7 @@ button:disabled {
 .btn--neutral {
   height: 36px;
   padding: 0 14px;
-  border: 1px solid var(--line2);
+  border: 1px solid var(--control-line);
   background: var(--surface);
   color: var(--ink);
   font-weight: 500;
@@ -519,7 +551,7 @@ button:disabled {
   width: 100%;
   height: 40px;
   padding: 0 12px;
-  border: 1px solid var(--line2);
+  border: 1px solid var(--control-line);
   border-radius: 8px;
   background: var(--surface);
   color: var(--ink);
@@ -552,7 +584,7 @@ button:disabled {
   align-items: center;
   height: 40px;
   background: var(--surface);
-  border: 1px solid var(--line2);
+  border: 1px solid var(--control-line);
   border-radius: 8px;
   overflow: hidden;
   min-width: 0;
@@ -1078,7 +1110,7 @@ button:disabled {
 
 .chip-btn {
   padding: 1px 6px;
-  border: 1px solid var(--line);
+  border: 1px solid var(--control-line);
   border-radius: 4px;
   background: var(--surface);
   color: var(--ink2);
@@ -1088,7 +1120,7 @@ button:disabled {
 
 .chip-btn:hover {
   color: var(--ink);
-  border-color: var(--line2);
+  border-color: var(--ink3);
 }
 
 .hero__publisher {
@@ -2062,7 +2094,7 @@ button:disabled {
   align-items: center;
   gap: 8px;
   padding: 28px 20px;
-  border: 1.5px dashed var(--line2);
+  border: 1.5px dashed var(--control-line);
   border-radius: 10px;
   background: var(--sunken);
   text-align: center;
@@ -2316,15 +2348,6 @@ button:disabled {
 }
 
 @media (max-width: 640px) {
-  .app-header__inner {
-    padding-top: 10px;
-    padding-bottom: 10px;
-  }
-
-  .brand__sub {
-    display: none;
-  }
-
   .search-form .btn--hero,
   .search-form .btn {
     flex: 1 1 100%;
