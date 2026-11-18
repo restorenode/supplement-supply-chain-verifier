@@ -19,8 +19,9 @@ Recommended approach:
    - `ADMIN_API_KEY`
    - `LLM_PROVIDER=mock` (or `openai`)
    - `CHAIN_MODE=mock` (or `real`)
-   - `CHAIN_NAME` (optional label)
-   - `CHAIN_RPC_URL`, `CONTRACT_ADDRESS`, `PUBLISHER_PRIVATE_KEY`, `CHAIN_ID` (only if `CHAIN_MODE=real`)
+   - `CHAIN_NETWORK` (`base-sepolia` default; `base` for production)
+   - `CONTRACT_ADDRESS`, `PUBLISHER_PRIVATE_KEY` (only if `CHAIN_MODE=real`)
+   - `CHAIN_RPC_URL` (optional: your own RPC instead of the preset's public one)
 4. Deploy and wait for the service to become healthy.
 5. Verify the health endpoint: `https://<your-backend>/health`.
 
@@ -35,9 +36,10 @@ Recommended approach:
 - Mock chain (`CHAIN_MODE=mock`):
   - No RPC credentials required.
   - Faster and safer for demos.
-  - Publish/verify uses an in-memory registry on the backend.
+  - Publish/verify uses a local registry that mirrors the contract and persists to `MOCK_CHAIN_PATH`.
 - Real chain (`CHAIN_MODE=real`):
-  - Requires `CHAIN_RPC_URL`, `CONTRACT_ADDRESS`, `PUBLISHER_PRIVATE_KEY`, and `CHAIN_ID`.
+  - Requires `CONTRACT_ADDRESS` and `PUBLISHER_PRIVATE_KEY`; the network preset supplies chain ID, RPC and explorer.
+  - Deploy the registry first (see `contracts/README.md`); fund the publisher with a little ETH on Base Sepolia or Base.
   - Publish writes an on-chain attestation hash.
   - Verify checks the on-chain registry.
 
@@ -50,12 +52,10 @@ Backend (Render):
 - `ADMIN_API_KEY`
 - `LLM_PROVIDER`
 - `CHAIN_MODE`
-- `CHAIN_NAME` (optional)
-- `CHAIN_RPC_URL` (real chain only)
+- `CHAIN_NETWORK` (network preset)
 - `CONTRACT_ADDRESS` (real chain only)
 - `PUBLISHER_PRIVATE_KEY` (real chain only)
-- `CHAIN_ID` (real chain only)
+- `CHAIN_RPC_URL` (optional override)
 
 Frontend (Vercel):
 - `NEXT_PUBLIC_API_BASE_URL`
-- `NEXT_PUBLIC_TX_EXPLORER_BASE_URL` (optional, explorer base for tx links)

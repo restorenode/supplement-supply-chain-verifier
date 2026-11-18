@@ -18,6 +18,7 @@ import {
   PublishResult,
   uploadDocument
 } from "@/lib/api";
+import { explorerFor, networkLabel, useChainInfo } from "@/lib/chain";
 import { BATCH_ID_PATTERN, clockTime, formatBytes, formatDate, MAX_UPLOAD_BYTES, truncateHash, txUrl } from "@/lib/format";
 import {
   ActivityLog,
@@ -119,6 +120,8 @@ export default function AdminClient() {
   const [extraction, setExtraction] = useState<ExtractionResponse | null>(null);
   const [attestation, setAttestation] = useState<Attestation | null>(null);
   const [published, setPublished] = useState<PublishResult | null>(null);
+
+  const chainInfo = useChainInfo();
 
   // Activity
   const [log, setLog] = useState<LogEntry[]>([]);
@@ -327,7 +330,7 @@ export default function AdminClient() {
     return CTA[index];
   }
 
-  const explorer = txUrl(published?.txHash);
+  const explorer = txUrl(explorerFor(chainInfo, attestation?.chain), published?.txHash);
 
   return (
     <main className="container console">
@@ -596,7 +599,7 @@ export default function AdminClient() {
                     <div className="proof__col" style={{ gap: 2, paddingBottom: 2 }}>
                       <span className="mono muted" style={{ fontSize: 12 }}>
                         Block #{published.blockNumber.toLocaleString("en-US")}
-                        {attestation?.chain ? ` · ${attestation.chain.toUpperCase()}` : ""}
+                        {attestation?.chain ? ` · ${networkLabel(chainInfo, attestation.chain)?.toUpperCase()}` : ""}
                       </span>
                       {explorer ? (
                         <a href={explorer} target="_blank" rel="noreferrer" className="ext-link">
@@ -618,7 +621,9 @@ export default function AdminClient() {
               ) : (
                 <>
                   <p className="muted" style={{ fontSize: 14, maxWidth: 560 }}>
-                    Writes the fingerprint to the chain. This is permanent. The record itself remains off-chain.
+                    Writes the fingerprint to {chainInfo ? chainInfo.displayName : "the chain"}
+                    {chainInfo?.mode === "mock" ? " (mock registry)" : ""}. This is permanent. The record itself remains
+                    off-chain.
                   </p>
                   <div>
                     <button

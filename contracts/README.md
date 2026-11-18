@@ -15,6 +15,20 @@ Fill in `RPC_URL` and `PRIVATE_KEY` in `.env`.
 forge test
 ```
 
+## Deploy to Base Sepolia (recommended)
+
+Base supports EIP-1559, so no extra flags are needed. Fund the deployer with a little Base Sepolia ETH first.
+
+```bash
+forge script script/Deploy.s.sol:Deploy \
+  --rpc-url https://sepolia.base.org \
+  --broadcast \
+  -vvvv
+```
+
+Then set `CHAIN_NETWORK=base-sepolia`, `CHAIN_MODE=real` and `CONTRACT_ADDRESS=<deployed address>` in
+`backend/.env`. For production use `--rpc-url https://mainnet.base.org` and `CHAIN_NETWORK=base`.
+
 ## Deploy to Initia EVM (legacy transactions)
 
 Initia MiniEVM does not support EIP-1559, so deployments must use legacy transactions.

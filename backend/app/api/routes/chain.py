@@ -9,6 +9,7 @@ from sqlalchemy.orm import Session
 from app.api.deps import get_batch_or_404, get_db, get_extraction_or_404
 from app.chain.deps import get_chain_client
 from app.chain.hashing import compute_attestation_hash, hash_batch_id
+from app.chain.networks import resolve_network
 from app.core.config import settings
 from app.core.errors import raise_api_error
 from app.core.security import require_api_key
@@ -29,15 +30,19 @@ def _iso_utc(value: datetime | None) -> str | None:
 
 @router.get("/chain/info")
 def chain_info() -> dict:
-    """Public registry details for display (network name, registry contract). No secrets."""
+    """Public registry details for display: network, chain ID, explorer, contract. No secrets."""
+    network = resolve_network()
     mock = settings.chain_mode.lower() == "mock"
     address = settings.contract_address.strip().lower() or None
     return {
-        "chainName": settings.chain_name,
-        "chainId": settings.chain_id or None,
+        "network": network.key,
+        "displayName": network.display_name,
+        "chainId": network.chain_id or None,
+        "testnet": network.testnet,
         "mode": "mock" if mock else "real",
-        # In mock mode nothing is written to the configured contract, so don't advertise it.
+        # Mock transactions and the configured contract don't exist on the real explorer.
         "contractAddress": None if mock else address,
+        "explorerUrl": None if mock else network.explorer_url,
     }
 
 
@@ -57,7 +62,7 @@ def get_attestation(batchId: str, db: Session = Depends(get_db)) -> JSONResponse
             "canonicalJsonHash": f"0x{canonical_hash.hex()}",
             "createdAt": _iso_utc(extraction.extracted_at),
             "published": batch.status == BatchStatus.PUBLISHED,
-            "chain": batch.chain or settings.chain_name,
+            "chain": batch.chain or resolve_network().key,
             "txHash": batch.tx_hash,
             "publisherAddress": batch.publisher_address,
             "publishedAt": _iso_utc(batch.published_at),
@@ -114,7 +119,7 @@ def publish_attestation(
     published_at = datetime.now(timezone.utc)
     batch.status = BatchStatus.PUBLISHED
     batch.tx_hash = receipt.tx_hash
-    batch.chain = settings.chain_name
+    batch.chain = resolve_network().key
     batch.publisher_address = chain_client.publisher_address
     batch.published_at = published_at
     db.commit()

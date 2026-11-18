@@ -1,7 +1,10 @@
+"use client";
+
 import AnalyteStatusCell from "@/components/AnalyteStatus";
 import Hash from "@/components/Hash";
 import { AlertIcon, ExternalIcon } from "@/components/icons";
 import { Analyte, VerificationResult } from "@/lib/api";
+import { explorerFor, networkLabel, useChainInfo } from "@/lib/chain";
 import { formatDate, formatUtc, txUrl } from "@/lib/format";
 
 function labRows(result: VerificationResult): Analyte[] {
@@ -64,7 +67,8 @@ export default function VerificationDetails({ result }: { result: VerificationRe
   const { product, status } = result;
   const rows = labRows(result);
   const lab = result.labReport;
-  const explorer = txUrl(result.txHash);
+  const chainInfo = useChainInfo();
+  const explorer = txUrl(explorerFor(chainInfo, result.chain), result.txHash);
   const showLabs = status === "verified" && !!lab;
 
   return (
@@ -235,7 +239,7 @@ export default function VerificationDetails({ result }: { result: VerificationRe
           {result.txHash ? (
             <div className="proof__col" style={{ gap: 4, paddingBottom: 2 }}>
               <span className="mono muted" style={{ fontSize: 12 }}>
-                {[result.chain?.toUpperCase(), result.publishedAt ? formatUtc(result.publishedAt) : null]
+                {[networkLabel(chainInfo, result.chain)?.toUpperCase(), result.publishedAt ? formatUtc(result.publishedAt) : null]
                   .filter(Boolean)
                   .join(" · ")}
               </span>
