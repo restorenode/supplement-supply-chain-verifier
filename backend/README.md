@@ -24,14 +24,15 @@ Copy `.env.example` to `.env` and update values as needed. Required variables:
 - `ENV` (`dev`, `test`, `prod`)
 - `CHAIN_MODE` (`real` or `mock`)
 - `LLM_PROVIDER` (`mock`, `demo` or `openai`)
-- `CHAIN_NAME` (optional label stored with published batches)
+- `CHAIN_NETWORK` (`base-sepolia` default, `base`, `sepolia`, `ethereum`, `initia-evm`; `CHAIN_NAME` is still accepted)
 
 Only required when `CHAIN_MODE=real`:
 
-- `CHAIN_RPC_URL`
 - `CONTRACT_ADDRESS`
 - `PUBLISHER_PRIVATE_KEY`
-- `CHAIN_ID`
+
+Optional overrides of the network preset: `CHAIN_RPC_URL`, `CHAIN_ID`, `CHAIN_EXPLORER_URL`, `CHAIN_LEGACY_TX`.
+In mock mode, sealed records persist to `MOCK_CHAIN_PATH` (default `mock_chain.json`; empty = in memory).
 
 Only required when `LLM_PROVIDER=openai`:
 
@@ -56,11 +57,13 @@ site-packages are used instead of the system/Homebrew ones.
 
 ## Chain adapter and verification logic
 
-The chain client lives in `app/chain/client.py` and uses web3.py with legacy (non-EIP-1559)
-transactions to publish batch attestation hashes to the Initia EVM `BatchHashRegistry` contract.
+The chain client lives in `app/chain/client.py` and uses web3.py to publish batch attestation hashes
+to the `BatchHashRegistry` contract on the network selected by `CHAIN_NETWORK` (presets in
+`app/chain/networks.py`). EIP-1559 fees are used where supported; Initia EVM uses legacy transactions.
 
-When `CHAIN_MODE=mock`, the backend stores published hashes in-memory for local/dev and integration
-tests. This mode does not require chain RPC or a private key.
+When `CHAIN_MODE=mock`, a local registry mirrors the contract's rules (one seal per batch), issues
+realistic block numbers for the selected network, and persists to `MOCK_CHAIN_PATH`. This mode does
+not require an RPC endpoint or a private key.
 
 Verification recomputes the canonical JSON hash for the batch, reads the on-chain hash, and returns
 `verified: true` only when both hashes match and an on-chain value exists.

@@ -30,22 +30,16 @@ export function clockTime(date = new Date()): string {
   return date.toTimeString().slice(0, 8);
 }
 
-const EXPLORER_BASE = (process.env.NEXT_PUBLIC_TX_EXPLORER_BASE_URL || "").replace(/\/$/, "");
-
-/** Block-explorer link for a transaction, or undefined when no explorer is configured. */
-export function txUrl(txHash: string | null | undefined): string | undefined {
-  if (!txHash || !EXPLORER_BASE || !/^0x[0-9a-fA-F]+$/.test(txHash)) return undefined;
-  return `${EXPLORER_BASE}/${txHash}`;
+/** Block-explorer link for a transaction. The explorer base comes from GET /chain/info. */
+export function txUrl(explorerBase: string | null | undefined, txHash: string | null | undefined): string | undefined {
+  if (!explorerBase || !txHash || !/^0x[0-9a-fA-F]{64}$/.test(txHash)) return undefined;
+  return `${explorerBase.replace(/\/$/, "")}/tx/${txHash}`;
 }
 
-/**
- * Block-explorer link for an address. NEXT_PUBLIC_TX_EXPLORER_BASE_URL points at the explorer's
- * transaction path (e.g. https://explorer.example.com/tx), so swap its trailing /tx for /address.
- */
-export function addressUrl(address: string | null | undefined): string | undefined {
-  if (!address || !EXPLORER_BASE || !/^0x[0-9a-fA-F]{40}$/.test(address)) return undefined;
-  const base = EXPLORER_BASE.replace(/\/tx$/, "");
-  return `${base}/address/${address}`;
+/** Block-explorer link for an address (e.g. the registry contract). */
+export function addressUrl(explorerBase: string | null | undefined, address: string | null | undefined): string | undefined {
+  if (!explorerBase || !address || !/^0x[0-9a-fA-F]{40}$/.test(address)) return undefined;
+  return `${explorerBase.replace(/\/$/, "")}/address/${address}`;
 }
 
 /** Mirror of the backend's batch ID rule (URL-safe, max 64 characters). */

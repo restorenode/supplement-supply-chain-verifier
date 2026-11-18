@@ -13,6 +13,13 @@ def client(tmp_path):
     config.settings.admin_api_key = "test-key"
     config.settings.env = "test"
     config.settings.llm_provider = "mock"
+    # Keep chain settings hermetic, whatever the developer's local .env says.
+    config.settings.chain_network = "base-sepolia"
+    config.settings.chain_id = 0
+    config.settings.chain_rpc_url = ""
+    config.settings.chain_explorer_url = ""
+    config.settings.chain_legacy_tx = False
+    config.settings.mock_chain_path = ""
     init_engine()
     init_db()
     with TestClient(app) as test_client:

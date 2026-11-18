@@ -197,19 +197,23 @@ def test_auth_check(client):
 
 
 def test_chain_info_is_public_and_hides_address_in_mock_mode(client):
-    original = (config.settings.chain_name, config.settings.contract_address, config.settings.chain_mode)
-    config.settings.chain_name = "initia-evm"
+    original = (config.settings.chain_network, config.settings.contract_address, config.settings.chain_mode)
+    config.settings.chain_network = "base-sepolia"
     config.settings.contract_address = "0xABCDEF0000000000000000000000000000000001"
     try:
         config.settings.chain_mode = "real"
         real = client.get("/chain/info").json()
-        assert real["chainName"] == "initia-evm"
+        assert real["network"] == "base-sepolia"
+        assert real["displayName"] == "Base Sepolia"
+        assert real["chainId"] == 84532
         assert real["mode"] == "real"
+        assert real["explorerUrl"] == "https://sepolia.basescan.org"
         assert real["contractAddress"] == "0xabcdef0000000000000000000000000000000001"
 
         config.settings.chain_mode = "mock"
         mock = client.get("/chain/info").json()
         assert mock["mode"] == "mock"
         assert mock["contractAddress"] is None
+        assert mock["explorerUrl"] is None
     finally:
-        config.settings.chain_name, config.settings.contract_address, config.settings.chain_mode = original
+        config.settings.chain_network, config.settings.contract_address, config.settings.chain_mode = original

@@ -40,3 +40,6 @@ backend/path/
 
 # TypeScript incremental build info
 *.tsbuildinfo
+
+# Local mock blockchain state (CHAIN_MODE=mock)
+mock_chain.json*

@@ -15,7 +15,6 @@ cp .env.example .env.local
 ```
 
 Optional env:
-- `NEXT_PUBLIC_TX_EXPLORER_BASE_URL` (used to link transaction hashes)
 
 ## Run dev server
 

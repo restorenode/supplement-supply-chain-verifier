@@ -150,10 +150,13 @@ async function request<T>(path: string, options: RequestInit): Promise<T> {
 }
 
 export type ChainInfo = {
-  chainName: string;
+  network: string;
+  displayName: string;
   chainId: number | null;
+  testnet: boolean;
   mode: "real" | "mock";
   contractAddress: string | null;
+  explorerUrl: string | null;
 };
 
 export function getChainInfo() {

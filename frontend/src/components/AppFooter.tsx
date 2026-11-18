@@ -1,22 +1,14 @@
 "use client";
 
-import { useEffect, useState } from "react";
 import { ExternalIcon } from "@/components/icons";
-import { ChainInfo, getChainInfo } from "@/lib/api";
+import { useChainInfo } from "@/lib/chain";
 import { addressUrl, truncateHash } from "@/lib/format";
 
 /** Site footer: protocol name plus the live network and registry contract, read from the API. */
 export default function AppFooter() {
-  const [chain, setChain] = useState<ChainInfo | null>(null);
-
-  useEffect(() => {
-    getChainInfo()
-      .then(setChain)
-      .catch(() => setChain(null));
-  }, []);
-
+  const chain = useChainInfo();
   const address = chain?.contractAddress ?? null;
-  const explorer = addressUrl(address);
+  const explorer = addressUrl(chain?.explorerUrl, address);
 
   return (
     <footer className="app-footer">
@@ -26,7 +18,7 @@ export default function AppFooter() {
           <div className="app-footer__meta">
             <span className="app-footer__item">
               <span className="app-footer__dot" aria-hidden="true" />
-              NETWORK · <span className="app-footer__value">{chain.chainName.toUpperCase()}</span>
+              NETWORK · <span className="app-footer__value">{chain.displayName.toUpperCase()}</span>
               {chain.mode === "mock" ? <span className="app-footer__value">(MOCK)</span> : null}
             </span>
             {address ? (

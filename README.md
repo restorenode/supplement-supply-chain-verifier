@@ -87,7 +87,11 @@ maintain privacy while ensuring data integrity.
 - LLM provider configurable; mock provider for deterministic tests, demo provider (offline rule-based parser) for local demos with the sample COA in `backend/tests/fixtures/sample_coa.pdf`
 
 ### Blockchain
-- Registry client with mock mode for local and integration tests
+- Network: **Base** (Ethereum L2); **Base Sepolia** testnet by default. EVM-compatible, so the
+  Solidity registry and web3.py client run unchanged, with sub-cent fees and Basescan for public proof.
+- Presets for `base`, `base-sepolia`, `ethereum`, `sepolia` and `initia-evm` (`CHAIN_NETWORK`).
+- Mock mode (`CHAIN_MODE=mock`) mirrors the contract's rules, produces realistic block numbers for
+  the selected network, and persists sealed records to `backend/mock_chain.json` across restarts.
 
 ### DevOps
 - Containerization: Docker + Docker Compose
@@ -162,8 +166,8 @@ Or use the helper script (reads `ADMIN_API_KEY` from `./.env` if set):
 
 ## How to deploy
 
-Optional frontend env for transaction links:
-- `NEXT_PUBLIC_TX_EXPLORER_BASE_URL` (e.g. https://explorer.example.com/tx)
+Block-explorer links (transactions and the registry contract) come from the backend's network
+preset via `GET /chain/info`, so the frontend needs no chain configuration.
 
 See `DEPLOYMENT.md` for the recommended deployment steps.
 
