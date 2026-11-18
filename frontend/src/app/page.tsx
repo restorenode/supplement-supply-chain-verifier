@@ -11,29 +11,29 @@ export default function HomePage() {
           <div className="hero__copy">
             <div className="pill">
               <span className="pill__dot" />
-              KECCAK-256 · ON-CHAIN ATTESTATION
+              LAB RESULTS · SEALED ON-CHAIN
             </div>
-            <h1 className="hero__title">Check that a supplement&apos;s lab report is real.</h1>
+            <h1 className="hero__title">Lab results, sealed at the source.</h1>
             <p className="hero__lede">
-              Trace, verify, and publish supplement batch attestations with a tamper-evident chain.
+              Each batch&apos;s Certificate of Analysis is sealed on-chain at publication. Any alteration, however small, is detectable.
             </p>
             <HomeSearch />
             <p className="hint">
-              Find the batch ID on the bottle label, near the expiry date. Example:{" "}
+              Printed on the label, near the expiry date. Example:{" "}
               <span className="mono muted">VA-2025-0001</span>
             </p>
             <div className="hero__publisher">
-              <span>Publishing lab reports for your batches?</span>
+              <span>Manufacturers publish their Certificates of Analysis here.</span>
               <Link href="/admin" className="btn btn--neutral">
-                Publisher admin
+                Publisher console
                 <ArrowRightIcon size={14} />
               </Link>
             </div>
           </div>
 
-          <aside className="sample" aria-label="Example of a verification result">
+          <aside className="sample" aria-label="Example verification result">
             <div className="sample__head">
-              <span>SAMPLE RESULT</span>
+              <span>EXAMPLE RESULT</span>
               <span>VA-2025-0001</span>
             </div>
             <div className="sample__verdict">
@@ -43,7 +43,7 @@ export default function HomePage() {
                   <CheckIcon size={11} weight={2.4} />
                   VERIFIED
                 </span>
-                <p className="sample__headline">This lab data is authentic.</p>
+                <p className="sample__headline">Record intact.</p>
               </div>
             </div>
             <dl className="sample__list">
@@ -53,7 +53,7 @@ export default function HomePage() {
               </div>
               <div>
                 <dt>Lab results</dt>
-                <dd>6 of 6 pass</dd>
+                <dd>6 of 6 within specification</dd>
               </div>
               <div>
                 <dt>Expires</dt>
@@ -78,9 +78,9 @@ export default function HomePage() {
       <section className="container section" aria-labelledby="how">
         <div className="section__head">
           <h2 id="how" className="section__title">
-            How it works
+            Method
           </h2>
-          <span className="label">3 STEPS · NO ACCOUNT NEEDED TO VERIFY</span>
+          <span className="label">THREE STEPS · OPEN TO ANYONE</span>
         </div>
         <ol className="steps3">
           <li>
@@ -88,22 +88,22 @@ export default function HomePage() {
               <span className="steps3__num">01</span>
               <span className="steps3__line" />
               <span className="label" style={{ fontSize: 10.5 }}>
-                OFF-CHAIN
+                LABORATORY
               </span>
             </div>
-            <h3>Lab report</h3>
-            <p>The manufacturer uploads the batch&apos;s Certificate of Analysis. Key results are extracted from the PDF.</p>
+            <h3>Analysis</h3>
+            <p>The manufacturer submits the batch&apos;s Certificate of Analysis from its testing laboratory. The results are extracted from the document.</p>
           </li>
           <li>
             <div className="steps3__rule">
               <span className="steps3__num">02</span>
               <span className="steps3__line" />
               <span className="label" style={{ fontSize: 10.5 }}>
-                HASH → ON-CHAIN
+                BLOCKCHAIN
               </span>
             </div>
-            <h3>Hashed &amp; attested on-chain</h3>
-            <p>The extracted data is hashed, and that hash is published to a public blockchain where it can&apos;t be edited.</p>
+            <h3>Seal</h3>
+            <p>The results are reduced to a cryptographic fingerprint and recorded on a public blockchain. The record cannot be edited.</p>
           </li>
           <li>
             <div className="steps3__rule">
@@ -113,8 +113,8 @@ export default function HomePage() {
                 PUBLIC
               </span>
             </div>
-            <h3>Anyone can verify</h3>
-            <p>Enter a batch ID. We recompute the hash from the stored data and compare it with the one on-chain.</p>
+            <h3>Verification</h3>
+            <p>Anyone can enter a batch ID. The fingerprint is recomputed from the record and compared with the seal.</p>
           </li>
         </ol>
       </section>
@@ -123,34 +123,34 @@ export default function HomePage() {
         <div className="chain-split">
           <div className="chain-split__intro">
             <h2 id="chain" className="section__title" style={{ marginBottom: 10 }}>
-              What goes on-chain
+              Data custody
             </h2>
             <p className="muted" style={{ fontSize: 14 }}>
-              Only fingerprints. A hash reveals nothing about the document it came from, but any change to the document
-              changes the hash.
+              Only fingerprints are recorded on-chain. A fingerprint reveals nothing about the record it describes. Change
+              a single value and it no longer matches.
             </p>
           </div>
           <div className="chain-split__cards">
             <div className="where">
               <div className="where__head">
                 <span className="tag">OFF-CHAIN</span>
-                <span>Stored by the publisher</span>
+                <span>Held by the manufacturer</span>
               </div>
               <ul>
-                <li>Full lab report PDF</li>
-                <li>Extracted lab results</li>
+                <li>Certificate of Analysis (PDF)</li>
+                <li>Extracted test results</li>
                 <li>Product and batch details</li>
               </ul>
             </div>
             <div className="where where--on">
               <div className="where__head">
                 <span className="tag">ON-CHAIN</span>
-                <span>Public and permanent</span>
+                <span>Public. Permanent.</span>
               </div>
               <ul>
-                <li>Keccak-256 hash of the attestation</li>
-                <li>Hashed batch ID reference</li>
-                <li>Transaction and timestamp</li>
+                <li>Fingerprint of the record</li>
+                <li>Hashed batch reference</li>
+                <li>Time of publication</li>
               </ul>
             </div>
           </div>

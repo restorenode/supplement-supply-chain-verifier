@@ -5,7 +5,7 @@ export type SealKind = "verified" | "mismatch" | "pending" | "notfound";
 const SEALS: Record<SealKind, { tone: string; text: string; icon: JSX.Element; stamp: boolean }> = {
   verified: { tone: "ok", text: "VERIFIED", icon: <CheckIcon size={36} weight={1.6} />, stamp: true },
   mismatch: { tone: "bad", text: "MISMATCH", icon: <XIcon size={32} weight={1.6} />, stamp: true },
-  pending: { tone: "warn", text: "PENDING", icon: <ClockIcon size={30} weight={1.5} />, stamp: false },
+  pending: { tone: "warn", text: "UNSEALED", icon: <ClockIcon size={30} weight={1.5} />, stamp: false },
   notfound: { tone: "none", text: "NO RECORD", icon: <SearchIcon size={28} weight={1.5} />, stamp: false }
 };
 

@@ -460,6 +460,25 @@ paths:
                       message: "Failed to publish attestation to blockchain"
                       details: "Transaction reverted: insufficient gas"
 
+  /chain/info:
+    get:
+      tags:
+        - Verify
+      summary: Registry network details (Public)
+      description: Network name and registry contract for display. The contract address is null in mock mode.
+      responses:
+        '200':
+          description: Registry details
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  chainName: { type: string, example: "initia-evm" }
+                  chainId: { type: integer, nullable: true }
+                  mode: { type: string, enum: [real, mock] }
+                  contractAddress: { type: string, nullable: true, example: "0x786d4eba72ba8145629288817ee446666f4c37fd" }
+
   /batches/{batchId}/verify:
     get:
       tags:
@@ -509,7 +528,7 @@ paths:
                     offchainHash: "0x3a8f5c2d1e9b4a7f6c8d2e1a3b5c7d9e0f2a4b6c8d0e2f4a6b8c0d2e4f6a8b0c2"
                     onchainHash: "0x5b9f6d3e2a0c8d1f4e7a9b2c5d8e1f4a7b0c3d6e9f2a5b8c1d4e7f0a3b6c9d2e5"
                     txHash: "0x1234567890abcdef1234567890abcdef1234567890abcdef1234567890abcdef"
-                    mismatchReason: "Hash mismatch: off-chain and on-chain hashes do not match"
+                    mismatchReason: "The computed fingerprint does not match the sealed record."
                     attestation:
                       productName: "Vitamin A 10,000 IU"
                       supplementType: "Vitamin A"
@@ -761,7 +780,7 @@ components:
         canonicalJsonHash:
           type: string
           description: |
-            SHA-256 hash of the canonical JSON (hex-encoded, prefixed with 0x).
+            Keccak-256 hash of the canonical JSON (hex-encoded, prefixed with 0x).
             This hash is stored on-chain.
           pattern: '^0x[a-fA-F0-9]{64}$'
           example: "0x3a8f5c2d1e9b4a7f6c8d2e1a3b5c7d9e0f2a4b6c8d0e2f4a6b8c0d2e4f6a8b0c2"
@@ -876,7 +895,7 @@ components:
           type: string
           description: Reason for verification failure (null if verified)
           nullable: true
-          example: "Hash mismatch: off-chain and on-chain hashes do not match"
+          example: "The computed fingerprint does not match the sealed record."
         attestation:
           type: object
           description: Summary of attestation data (optional, for display purposes)

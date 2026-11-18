@@ -155,7 +155,7 @@
 - **Purpose**: Register a batch attestation on-chain
 - **Parameters**:
   - `batchId`: Public batch identifier (string)
-  - `documentHash`: SHA-256 hash of the lab report PDF (bytes32)
+  - `documentHash`: Keccak-256 hash of the canonical attestation JSON (bytes32); the JSON includes the PDF's SHA-256 fingerprint
 - **Access**: Public (anyone can call)
 - **Effects**: Stores mapping of batchId → Attestation struct
 - **Emits**: `AttestationCreated` event

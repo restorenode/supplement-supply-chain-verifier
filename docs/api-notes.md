@@ -48,11 +48,11 @@ The `/batches/{batchId}/verify` endpoint requires **no authentication** and is p
 - **Purpose**: Blockchain transaction identifier
 
 ### Hash Values (`canonicalJsonHash`, `offchainHash`, `onchainHash`)
-- **Format**: SHA-256 hash as hex string with `0x` prefix
+- **Format**: Keccak-256 hash as hex string with `0x` prefix
 - **Pattern**: `^0x[a-fA-F0-9]{64}$`
 - **Computation**: 
   - Canonical JSON is serialized deterministically (sorted keys, no whitespace)
-  - SHA-256 hash is computed from the serialized JSON bytes
+  - Keccak-256 hash is computed from the serialized JSON
   - Hash is hex-encoded and prefixed with `0x`
 - **Purpose**: Tamper-evident fingerprint of attestation data
 

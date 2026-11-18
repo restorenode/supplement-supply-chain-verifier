@@ -48,7 +48,7 @@ def verify_batch(
             **base,
             "verified": False,
             "status": VerificationStatus.UNPUBLISHED,
-            "mismatchReason": "Lab data for this batch hasn't been processed yet",
+            "mismatchReason": "Lab results have not been extracted yet.",
         }
 
     _canonical_json, offchain_hash = compute_attestation_hash(
@@ -68,13 +68,13 @@ def verify_batch(
     verified = onchain_hash is not None and offchain_hash == onchain_hash
     if onchain_hash is None:
         result_status = VerificationStatus.UNPUBLISHED
-        mismatch_reason = "No on-chain attestation found for this batch"
+        mismatch_reason = "No sealed record exists for this batch."
     elif verified:
         result_status = VerificationStatus.VERIFIED
         mismatch_reason = None
     else:
         result_status = VerificationStatus.MISMATCH
-        mismatch_reason = "Hash mismatch: off-chain and on-chain hashes do not match"
+        mismatch_reason = "The computed fingerprint does not match the sealed record."
 
     fields = ExtractionResult.model_validate(extraction.extracted_fields)
     lab_report = {

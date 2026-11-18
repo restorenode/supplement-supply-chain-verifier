@@ -198,7 +198,7 @@ export function ExtractedResults({ rows, labName, modelName }: { rows: Analyte[]
       <div className={`extract-box__head${empty ? " extract-box__head--warn" : ""}`}>
         <span className="extract-box__ok">
           {empty ? <AlertIcon size={14} /> : <CheckIcon size={14} />}
-          {empty ? "Extraction finished with no results" : "Extraction succeeded"}
+          {empty ? "No results found" : "Results extracted"}
         </span>
         <span className="mono muted" style={{ fontSize: 11, letterSpacing: "0.08em" }}>
           {meta}
@@ -206,8 +206,8 @@ export function ExtractedResults({ rows, labName, modelName }: { rows: Analyte[]
       </div>
       {empty ? (
         <p className="extract-box__empty">
-          No lab results could be read from this PDF. The attestation will still cover the batch details and the
-          document fingerprint. Check that it&apos;s a text-based Certificate of Analysis if you expected results.
+          No test results were found in this document. The fingerprint will still cover the batch details and the
+          document itself. Use a text-based Certificate of Analysis to extract results.
         </p>
       ) : (
         <div className="table-wrap">
@@ -239,10 +239,10 @@ export function PayloadViewer({ payload }: { payload: unknown }) {
   return (
     <div className="code">
       <div className="code__head">
-        <span>ATTESTATION PAYLOAD · CANONICAL JSON</span>
+        <span>CANONICAL RECORD · JSON</span>
         <span>{lines.length} LINES</span>
       </div>
-      <pre className="code__pre" tabIndex={0} aria-label="Attestation payload JSON">
+      <pre className="code__pre" tabIndex={0} aria-label="Canonical record JSON">
         {lines.map((line, index) => {
           const match = line.match(/^(\s*)("[^"]*":\s?)?(.*)$/);
           return (
@@ -263,10 +263,10 @@ export function PayloadViewer({ payload }: { payload: unknown }) {
 
 export function ActivityLog({ entries }: { entries: LogEntry[] }) {
   return (
-    <aside className="card workspace__aside" aria-label="Activity log">
+    <aside className="card workspace__aside" aria-label="Activity">
       <header className="card__header" style={{ padding: "14px 18px" }}>
         <h2 className="card__title" style={{ whiteSpace: "nowrap" }}>
-          Activity log
+          Activity
         </h2>
         <span className="label" style={{ fontSize: 10.5 }}>
           LOCAL TIME

@@ -19,7 +19,7 @@ export default function HomeSearch() {
       onSubmit={(id) => router.push(`/verify?batch=${encodeURIComponent(id)}`)}
       buttonLabel={
         <>
-          Verify a batch
+          Verify batch
           <ArrowRightIcon />
         </>
       }

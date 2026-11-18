@@ -4,12 +4,13 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useEffect, useState } from "react";
 import { ThemeIcon } from "@/components/icons";
+import LogoMark from "@/components/LogoMark";
 
 type Theme = "light" | "dark";
 
 const NAV = [
   { href: "/verify", label: "Verify" },
-  { href: "/admin", label: "Admin" }
+  { href: "/admin", label: "Publisher" }
 ];
 
 function ThemeToggle() {
@@ -33,7 +34,7 @@ function ThemeToggle() {
   const label = theme === "dark" ? "Switch to light mode" : "Switch to dark mode";
   return (
     <button type="button" className="icon-btn" onClick={toggle} aria-label={label} title={label}>
-      <ThemeIcon />
+      <ThemeIcon size={18} />
     </button>
   );
 }
@@ -44,9 +45,7 @@ export default function AppHeader() {
     <header className="app-header">
       <div className="container app-header__inner">
         <Link href="/" className="brand" aria-label="Supplement Supply Chain Verification Protocol, home">
-          <span className="brand__mark">
-            <span className="brand__dot" />
-          </span>
+          <LogoMark />
           <span className="brand__text">
             <span className="brand__name">Supplement Supply Chain</span>
             <span className="brand__sub">VERIFICATION PROTOCOL</span>

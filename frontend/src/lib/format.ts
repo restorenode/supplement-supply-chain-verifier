@@ -38,6 +38,16 @@ export function txUrl(txHash: string | null | undefined): string | undefined {
   return `${EXPLORER_BASE}/${txHash}`;
 }
 
+/**
+ * Block-explorer link for an address. NEXT_PUBLIC_TX_EXPLORER_BASE_URL points at the explorer's
+ * transaction path (e.g. https://explorer.example.com/tx), so swap its trailing /tx for /address.
+ */
+export function addressUrl(address: string | null | undefined): string | undefined {
+  if (!address || !EXPLORER_BASE || !/^0x[0-9a-fA-F]{40}$/.test(address)) return undefined;
+  const base = EXPLORER_BASE.replace(/\/tx$/, "");
+  return `${base}/address/${address}`;
+}
+
 /** Mirror of the backend's batch ID rule (URL-safe, max 64 characters). */
 export const BATCH_ID_PATTERN = /^[A-Za-z0-9][A-Za-z0-9._-]*$/;
 

@@ -30,15 +30,15 @@ import {
   StepState
 } from "@/app/admin/parts";
 
-const TITLES = ["Batch created", "PDF uploaded", "Extraction complete", "Attestation ready", "Published on-chain"];
-const CTA = ["Create batch", "Upload document", "Trigger extraction", "View attestation", "Publish to chain"];
-const BUSY = ["Creating…", "Uploading…", "Extracting…", "Building payload…", "Publishing… awaiting confirmation"];
+const TITLES = ["Register batch", "Attach certificate", "Extract results", "Compute fingerprint", "Seal on-chain"];
+const CTA = ["Register batch", "Upload certificate", "Extract results", "Compute fingerprint", "Seal on-chain"];
+const BUSY = ["Registering…", "Uploading…", "Extracting…", "Computing…", "Sealing… awaiting confirmation"];
 const ERROR_TITLES = [
-  "Failed to create batch",
+  "Registration failed",
   "Upload failed",
   "Extraction failed",
-  "Couldn't build the attestation",
-  "Publish failed"
+  "Computation failed",
+  "Seal failed"
 ];
 
 type Form = {
@@ -90,9 +90,9 @@ function validate(form: Form): Partial<Record<FieldKey, string>> {
 
 function describeError(err: unknown): string {
   if (err instanceof ApiError && err.status === 401) {
-    return "The API key was rejected. Disconnect and reconnect with a valid key.";
+    return "Publisher key rejected. Disconnect and reconnect with a valid key.";
   }
-  return err instanceof Error ? err.message : "Something went wrong. Try again.";
+  return err instanceof Error ? err.message : "Request failed. Retry.";
 }
 
 function maskKey(key: string) {
@@ -174,12 +174,12 @@ export default function AdminClient() {
       await checkApiKey(key);
       setApiKey(key);
       setKeyInput("");
-      addLog("API key connected", maskKey(key));
+      addLog("Publisher key connected", maskKey(key));
     } catch (err) {
       const message =
-        err instanceof ApiError && err.status === 401 ? "That API key was rejected. Check it and try again." : describeError(err);
+        err instanceof ApiError && err.status === 401 ? "Key rejected. Confirm the value and retry." : describeError(err);
       setAccessError(message);
-      addLog("API key rejected", message, "bad");
+      addLog("Key rejected", message, "bad");
     } finally {
       setConnecting(false);
     }
@@ -188,7 +188,7 @@ export default function AdminClient() {
   function disconnect() {
     setApiKey("");
     setAccessError(null);
-    addLog("API key disconnected", undefined, "info");
+    addLog("Key disconnected", undefined, "info");
   }
 
   function submitBatch(event: FormEvent<HTMLFormElement>) {
@@ -210,7 +210,7 @@ export default function AdminClient() {
           },
           apiKey
         ),
-      () => ["Batch created", batchId]
+      () => ["Batch registered", batchId]
     );
   }
 
@@ -236,7 +236,7 @@ export default function AdminClient() {
       () => uploadDocument(batchId, picked, apiKey),
       (doc) => {
         setUploaded({ doc, size: picked.size });
-        return ["Lab report uploaded", `${doc.filename} · ${formatBytes(picked.size)}`];
+        return ["Certificate uploaded", `${doc.filename} · ${formatBytes(picked.size)}`];
       }
     );
   }
@@ -249,7 +249,7 @@ export default function AdminClient() {
         setExtraction(result);
         setOpen((prev) => ({ ...prev, 2: true }));
         const count = result.extractedFields.analytes.length + result.extractedFields.contaminants.length;
-        return ["Extraction succeeded", `${count} result${count === 1 ? "" : "s"} · model ${result.modelInfo.modelName}`];
+        return ["Results extracted", `${count} result${count === 1 ? "" : "s"} · model ${result.modelInfo.modelName}`];
       }
     );
   }
@@ -260,19 +260,19 @@ export default function AdminClient() {
       () => getAttestation(batchId, apiKey),
       (result) => {
         setAttestation(result);
-        return ["Attestation generated", truncateHash(result.canonicalJsonHash)];
+        return ["Fingerprint computed", truncateHash(result.canonicalJsonHash)];
       }
     );
   }
 
   function publish() {
-    addLog("Publish submitted", "awaiting confirmation", "info");
+    addLog("Seal submitted", "awaiting confirmation", "info");
     void runStep(
       4,
       () => publishBatch(batchId, apiKey),
       (result) => {
         setPublished(result);
-        return ["Published on-chain", `tx ${truncateHash(result.txHash)} · block ${result.blockNumber.toLocaleString("en-US")}`];
+        return ["Sealed on-chain", `tx ${truncateHash(result.txHash)} · block ${result.blockNumber.toLocaleString("en-US")}`];
       }
     );
   }
@@ -289,7 +289,7 @@ export default function AdminClient() {
     setExtraction(null);
     setAttestation(null);
     setPublished(null);
-    addLog("Started a new batch", undefined, "info");
+    addLog("New batch started", undefined, "info");
   }
 
   const extractedRows = extraction ? [...extraction.extractedFields.analytes, ...extraction.extractedFields.contaminants] : [];
@@ -298,8 +298,8 @@ export default function AdminClient() {
   const summaries = [
     `${batchId} · ${form.productName.trim()} · ${form.manufacturer.trim()}`,
     uploaded ? `${uploaded.doc.filename} · ${formatBytes(uploaded.size)}` : "",
-    extraction ? `Extraction succeeded · ${resultCount} result${resultCount === 1 ? "" : "s"}` : "",
-    attestation ? `Payload hash ${truncateHash(attestation.canonicalJsonHash)}` : "",
+    extraction ? `${resultCount} result${resultCount === 1 ? "" : "s"} extracted` : "",
+    attestation ? `Fingerprint ${truncateHash(attestation.canonicalJsonHash)}` : "",
     published ? `tx ${truncateHash(published.txHash)}` : ""
   ];
   const defaultOpen = [false, false, true, true, true];
@@ -312,7 +312,7 @@ export default function AdminClient() {
       title: TITLES[index],
       state,
       isLast: index === TITLES.length - 1,
-      lockText: !connected ? "Connect your API key to start." : `Unlocks after step 0${index}.`,
+      lockText: !connected ? "Connect a publisher key to begin." : `Available after step 0${index}.`,
       summary: summaries[index],
       open: isOpen,
       onToggle: () => setOpen((prev) => ({ ...prev, [index]: !isOpen })),
@@ -334,9 +334,9 @@ export default function AdminClient() {
       <div className="console__head">
         <div style={{ minWidth: 0 }}>
           <div className="label">PUBLISHER CONSOLE</div>
-          <h1 className="console__title">Publish a batch attestation</h1>
+          <h1 className="console__title">Publish a batch record</h1>
           <p className="muted" style={{ maxWidth: 560 }}>
-            Create a batch, attach its lab report, and publish a tamper-evident attestation on-chain.
+            Register a batch, attach its Certificate of Analysis, and seal its fingerprint on-chain.
           </p>
         </div>
         <div className="meter" aria-label={`Pipeline progress: ${doneCount} of 5 steps complete`}>
@@ -363,15 +363,15 @@ export default function AdminClient() {
         </div>
       </div>
 
-      <section className="card access" aria-label="Admin access">
+      <section className="card access" aria-label="Publisher key">
         <div className="access__who">
           <span className="access__icon">
             <LockIcon size={15} />
           </span>
           <div style={{ display: "flex", flexDirection: "column", lineHeight: 1.3 }}>
-            <span style={{ fontWeight: 600, fontSize: 14 }}>Admin access</span>
+            <span style={{ fontWeight: 600, fontSize: 14 }}>Publisher key</span>
             <span className="faint" style={{ fontSize: 12 }}>
-              Stored only in memory.
+              Held in memory for this session only.
             </span>
           </div>
         </div>
@@ -388,7 +388,7 @@ export default function AdminClient() {
         ) : (
           <form className="access__form" onSubmit={connect}>
             <label className="prefixed">
-              <span className="prefixed__label">API KEY</span>
+              <span className="prefixed__label">KEY</span>
               <input
                 type="password"
                 className="prefixed__input"
@@ -396,7 +396,7 @@ export default function AdminClient() {
                 onChange={(event) => setKeyInput(event.target.value)}
                 placeholder="Paste ADMIN_API_KEY"
                 autoComplete="off"
-                aria-label="API Key"
+                aria-label="Publisher key"
                 aria-invalid={accessError ? true : undefined}
               />
             </label>
@@ -478,7 +478,7 @@ export default function AdminClient() {
                       {effective[0] === "busy" ? <span className="dot pulse" /> : null}
                       {cta(0)}
                     </button>
-                    <span className="actions__note">Expires date is optional; everything else is required.</span>
+                    <span className="actions__note">Expiry date is optional. All other fields are required.</span>
                   </div>
                 </form>
               )}
@@ -512,9 +512,9 @@ export default function AdminClient() {
                       {cta(1)}
                     </button>
                     <span className="actions__note">
-                      The PDF is stored off-chain. Need a test file?{" "}
+                      The PDF is stored off-chain. For testing:{" "}
                       <a href="/samples/sample-coa.pdf" download="sample-coa.pdf">
-                        Download the sample COA
+                        sample certificate (PDF)
                       </a>
                     </span>
                   </div>
@@ -533,7 +533,7 @@ export default function AdminClient() {
               ) : (
                 <>
                   <p className="muted" style={{ fontSize: 14 }}>
-                    Read the product details and lab results out of{" "}
+                    Extract test results from{" "}
                     <span className="mono" style={{ fontSize: 13, color: "var(--ink)" }}>
                       {uploaded?.doc.filename ?? "the uploaded PDF"}
                     </span>
@@ -559,15 +559,15 @@ export default function AdminClient() {
               {attestation ? (
                 <>
                   <div className="proof__col" style={{ flex: "none" }}>
-                    <span className="label">Payload hash · Keccak-256</span>
-                    <Hash value={attestation.canonicalJsonHash} label="payload hash" />
+                    <span className="label">Fingerprint · Keccak-256</span>
+                    <Hash value={attestation.canonicalJsonHash} label="fingerprint" />
                   </div>
                   <PayloadViewer payload={attestation.canonicalJson} />
                 </>
               ) : (
                 <>
                   <div className="empty-state" style={{ padding: 16, alignItems: "flex-start", textAlign: "left" }}>
-                    No attestation yet.
+                    The fingerprint covers the batch details, the test results, and the document itself.
                   </div>
                   <div>
                     <button
@@ -608,17 +608,17 @@ export default function AdminClient() {
                   </div>
                   <div className="actions">
                     <Link href={`/verify?batch=${encodeURIComponent(batchId)}`} className="btn btn--neutral">
-                      Open public verification
+                      View public verification
                     </Link>
                     <button type="button" className="btn btn--ghost" onClick={startNewBatch}>
-                      Start a new batch
+                      Publish another batch
                     </button>
                   </div>
                 </>
               ) : (
                 <>
                   <p className="muted" style={{ fontSize: 14, maxWidth: 560 }}>
-                    Writes the payload hash to the chain. This can&apos;t be undone; the full payload stays off-chain.
+                    Writes the fingerprint to the chain. This is permanent. The record itself remains off-chain.
                   </p>
                   <div>
                     <button
