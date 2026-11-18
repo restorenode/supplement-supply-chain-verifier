@@ -3,228 +3,114 @@
 ## High-Level Architecture
 
 ```
-┌─────────────────────────────────────────────────────────────────┐
-│                         Frontend (React)                        │
-│  ┌──────────────┐  ┌──────────────┐  ┌──────────────┐         │
-│  │   Publisher  │  │   Consumer   │  │   Wallet     │         │
-│  │   Dashboard  │  │ Verification │  │  Connection  │         │
-│  └──────────────┘  └──────────────┘  └──────────────┘         │
-└────────────────────────────┬──────────────────────────────────┘
-                             │ HTTP/REST
-                             │
-┌────────────────────────────▼──────────────────────────────────┐
-│                    Backend API (Express/FastAPI)              │
-│  ┌─────────────────────────────────────────────────────────┐ │
-│  │              OpenAPI REST Endpoints                     │ │
-│  │  • POST /api/batches/upload                              │ │
-│  │  • POST /api/batches/:id/attest                          │ │
-│  │  • GET  /api/batches/:id/verify                          │ │
-│  │  • GET  /api/batches/:id/data                            │ │
-│  └─────────────────────────────────────────────────────────┘ │
+┌───────────────────────────────────────────────────────────────┐
+│                    Frontend (Next.js 14, React)               │
+│   Home  ·  Verify (public)  ·  Publisher console (API key)    │
+└──────────────────────────────┬────────────────────────────────┘
+                               │ HTTPS / JSON (OpenAPI: openapi.yaml)
+┌──────────────────────────────▼────────────────────────────────┐
+│                      Backend API (FastAPI)                    │
 │                                                               │
-│  ┌──────────────┐  ┌──────────────┐  ┌──────────────┐       │
-│  │   PDF        │  │   Hash       │  │   Blockchain │       │
-│  │   Processor  │  │   Generator  │  │   Service    │       │
-│  └──────────────┘  └──────────────┘  └──────────────┘       │
+│   Batches · Documents · Extraction · Attestation · Verify     │
 │                                                               │
-│  ┌──────────────┐                                            │
-│  │   AI         │                                            │
-│  │   Extractor  │  (OpenAI API or Local LLM)                │
-│  └──────────────┘                                            │
-└────────────┬────────────────────────────┬─────────────────────┘
-             │                            │
-             │                            │
-    ┌────────▼────────┐         ┌─────────▼──────────┐
-    │   PostgreSQL    │         │   File Storage     │
-    │   Database      │         │   (PDFs)           │
-    │                 │         │                    │
-    │ • batches       │         │ • lab_reports/     │
-    │ • attestations  │         │                    │
-    │ • documents     │         │                    │
-    └─────────────────┘         └────────────────────┘
-             │
-             │
-    ┌────────▼──────────────────────────────────────┐
-    │         Initia EVM Blockchain                  │
-    │                                                │
-    │  ┌──────────────────────────────────────────┐ │
-    │  │   BatchRegistry Smart Contract           │ │
-    │  │                                          │ │
-    │  │   • attestBatch(batchId, hash)          │ │
-    │  │   • getAttestation(batchId)             │ │
-    │  │   • AttestationCreated event            │ │
-    │  └──────────────────────────────────────────┘ │
-    └────────────────────────────────────────────────┘
+│   ┌────────────┐   ┌──────────────┐   ┌──────────────────┐    │
+│   │ PDF text   │   │ Extractor    │   │ Chain client     │    │
+│   │ (PyMuPDF)  │   │ mock | demo  │   │ web3.py | mock   │    │
+│   │            │   │ | openai     │   │ registry         │    │
+│   └────────────┘   └──────────────┘   └────────┬─────────┘    │
+└───────────────┬────────────────────────────────┼──────────────┘
+                │ SQLAlchemy                     │ JSON-RPC
+       ┌────────▼─────────┐            ┌─────────▼─────────────────┐
+       │ PostgreSQL       │            │ Base (Ethereum L2)        │
+       │ (SQLite locally) │            │ Base Sepolia by default   │
+       │                  │            │                           │
+       │ batches          │            │ BatchHashRegistry         │
+       │ documents (PDF)  │            │  publish(bytes32, bytes32)│
+       │ extractions      │            │  get(bytes32) → bytes32   │
+       └──────────────────┘            └───────────────────────────┘
 ```
 
-## Data Model Overview
+The network is selected with `CHAIN_NETWORK` (presets in `backend/app/chain/networks.py`:
+`base-sepolia`, `base`, `sepolia`, `ethereum`, `initia-evm`). With `CHAIN_MODE=mock`, a local registry
+that mirrors the contract replaces the RPC calls and persists to `MOCK_CHAIN_PATH`.
 
-### Database Tables
+## Data Model
 
-#### `batches`
-- `id` (UUID, PK)
-- `batch_id` (VARCHAR, UNIQUE) - Public batch identifier (e.g., "BATCH-2024-001")
-- `product_name` (VARCHAR)
-- `manufacturer_name` (VARCHAR)
-- `production_date` (DATE)
-- `expiration_date` (DATE, nullable)
-- `created_at` (TIMESTAMP)
-- `updated_at` (TIMESTAMP)
+### `batches`
+- `batch_id` (VARCHAR(64), PK): public batch identifier, e.g. `VA-2025-0001`
+- `product_name`, `supplement_type`, `manufacturer` (VARCHAR)
+- `production_date` (DATE), `expires_date` (DATE, nullable)
+- `status` (`DRAFT` → `READY` → `PUBLISHED`)
+- `chain` (network key the record was sealed on), `tx_hash`, `publisher_address`, `published_at`
 
-#### `documents`
-- `id` (UUID, PK)
-- `batch_id` (UUID, FK → batches.id)
-- `file_path` (VARCHAR) - Path to stored PDF file
-- `file_hash` (VARCHAR) - SHA-256 hash of PDF
-- `file_size` (INTEGER) - Size in bytes
-- `mime_type` (VARCHAR) - "application/pdf"
-- `uploaded_at` (TIMESTAMP)
-- `uploaded_by` (VARCHAR) - Publisher wallet address
+### `documents`
+- `document_id` (UUID, PK), `batch_id`
+- `filename`, `content_type`, `uploaded_at`
+- `data` (BLOB): the Certificate of Analysis PDF
+- `fingerprint`: SHA-256 of the PDF bytes
 
-#### `attestations`
-- `id` (UUID, PK)
-- `batch_id` (UUID, FK → batches.id)
-- `document_id` (UUID, FK → documents.id)
-- `on_chain_hash` (VARCHAR) - Hash stored on blockchain
-- `blockchain_tx_hash` (VARCHAR) - Transaction hash
-- `blockchain_block_number` (BIGINT)
-- `publisher_address` (VARCHAR) - Wallet address of publisher
-- `attested_at` (TIMESTAMP)
-- `verified` (BOOLEAN) - Whether hash matches document hash
+### `extractions`
+- `batch_id` (PK)
+- `extracted_fields` (JSON): lab, report date, potency, analytes, contaminants, methods, notes
+- `model_info` (JSON), `extracted_at`
+- `document_fingerprint`: the PDF fingerprint the extraction was made from
 
-#### `extracted_data`
-- `id` (UUID, PK)
-- `document_id` (UUID, FK → documents.id)
-- `ingredients` (JSONB) - Array of ingredient names and amounts
-- `test_results` (JSONB) - Array of test name, value, unit, pass/fail
-- `lab_name` (VARCHAR, nullable)
-- `test_date` (DATE, nullable)
-- `raw_extraction` (JSONB) - Full AI extraction output for debugging
-- `extracted_at` (TIMESTAMP)
+Schema changes are managed with Alembic (`backend/alembic`). Once a batch is `PUBLISHED`, its
+documents and extraction can no longer change.
 
-### Key Relationships
-- One `batch` can have multiple `documents` (versioning)
-- One `document` has one `extracted_data` record
-- One `batch` can have multiple `attestations` (if re-attested)
-- Each `attestation` references one `document`
+## API Surface
 
-## API Surface Overview
+Full specification: `openapi.yaml`. Admin endpoints require the `X-API-Key` header.
 
-### Batch Management
+| Method | Path | Access | Purpose |
+|---|---|---|---|
+| `GET` | `/health` | public | Health check |
+| `GET` | `/auth/check` | admin | Validate an API key |
+| `POST` | `/batches` | admin | Register a batch |
+| `GET` | `/batches/{batchId}` | admin | Read a batch |
+| `POST` | `/batches/{batchId}/documents` | admin | Upload the Certificate of Analysis (PDF, ≤ 20 MB) |
+| `POST` | `/batches/{batchId}/extract` | admin | Extract test results from the latest PDF |
+| `GET` | `/batches/{batchId}/attestation` | admin | Canonical JSON and its Keccak-256 hash |
+| `POST` | `/batches/{batchId}/publish` | admin | Seal the hash on-chain |
+| `GET` | `/batches/{batchId}/verify` | public | Compare the recomputed hash with the on-chain hash |
+| `GET` | `/chain/info` | public | Network, chain ID, explorer and registry address |
 
-#### `POST /api/batches/upload`
-- **Purpose**: Upload a lab report PDF and extract data
-- **Request**: Multipart form data with PDF file
-- **Response**: Batch ID, extracted data preview, document hash
-- **Status**: 201 Created
+## Smart Contract: `BatchHashRegistry`
 
-#### `POST /api/batches/:batchId/attest`
-- **Purpose**: Publish blockchain attestation for a batch
-- **Request**: Batch ID, publisher wallet address
-- **Response**: Transaction hash, block number
-- **Status**: 200 OK
-
-### Verification
-
-#### `GET /api/batches/:batchId/verify`
-- **Purpose**: Verify a batch's blockchain attestation
-- **Request**: Batch ID (path parameter)
-- **Response**: Verification status (verified/unverified/not_found), on-chain hash, off-chain hash match
-- **Status**: 200 OK
-
-#### `GET /api/batches/:batchId/data`
-- **Purpose**: Retrieve extracted lab report data for a batch
-- **Request**: Batch ID (path parameter)
-- **Response**: Product info, ingredients, test results, attestation metadata
-- **Status**: 200 OK
-
-### Health & Status
-
-#### `GET /api/health`
-- **Purpose**: Health check endpoint
-- **Response**: Service status, database connectivity, blockchain connectivity
-- **Status**: 200 OK
-
-## Smart Contract Responsibilities
-
-### Contract: `BatchRegistry`
-
-#### Functions
-
-**`attestBatch(string memory batchId, bytes32 documentHash)`**
-- **Purpose**: Register a batch attestation on-chain
-- **Parameters**:
-  - `batchId`: Public batch identifier (string)
-  - `documentHash`: Keccak-256 hash of the canonical attestation JSON (bytes32); the JSON includes the PDF's SHA-256 fingerprint
-- **Access**: Public (anyone can call)
-- **Effects**: Stores mapping of batchId → Attestation struct
-- **Emits**: `AttestationCreated` event
-
-**`getAttestation(string memory batchId) → (bytes32 hash, address publisher, uint256 timestamp)`**
-- **Purpose**: Retrieve attestation data for a batch
-- **Parameters**: `batchId` (string)
-- **Returns**: Document hash, publisher address, timestamp
-- **Access**: Public view function
-
-**`hasAttestation(string memory batchId) → bool`**
-- **Purpose**: Check if a batch has been attested
-- **Parameters**: `batchId` (string)
-- **Returns**: Boolean indicating existence
-- **Access**: Public view function
-
-#### Events
-
-**`AttestationCreated(string indexed batchId, bytes32 documentHash, address indexed publisher, uint256 timestamp)`**
-- **Purpose**: Emitted when a new attestation is created
-- **Indexed Fields**: `batchId`, `publisher` (for efficient filtering)
-- **Data**: Full attestation details
-
-#### Storage Structure
+Source: `contracts/src/BatchHashRegistry.sol` (Foundry).
 
 ```solidity
-struct Attestation {
-    bytes32 documentHash;
-    address publisher;
-    uint256 timestamp;
-}
+mapping(bytes32 => bytes32) public attestationHashByBatchId;
 
-mapping(string => Attestation) public attestations;
+function publish(bytes32 batchIdHash, bytes32 attestationHash) external;   // reverts ALREADY_PUBLISHED
+function get(bytes32 batchIdHash) external view returns (bytes32);
+event Published(bytes32 indexed batchIdHash, bytes32 attestationHash, address publisher, uint256 timestamp);
 ```
 
-#### Design Decisions
-- **String batchId**: Allows human-readable identifiers (e.g., "BATCH-2024-001")
-- **bytes32 hash**: Fixed-size type for efficient storage and gas costs
-- **No update/delete**: Immutable attestations (simplifies MVP, can add revocation later)
-- **Public functions**: No access control in MVP (can add role-based restrictions later)
+- `batchIdHash = keccak256(batchId)`: the plain batch ID never appears on-chain.
+- `attestationHash = keccak256(canonical JSON)`: the canonical JSON covers the batch details, the
+  extracted results and the PDF's SHA-256 fingerprint, serialized with sorted keys and no whitespace.
+- One seal per batch; there is no update or delete.
 
-## Data Flow Examples
+## Data Flows
 
-### Attestation Flow
-1. Frontend uploads PDF → Backend API
-2. Backend stores PDF → File Storage
-3. Backend generates hash → SHA-256 of PDF
-4. Backend extracts data → AI service
-5. Backend stores metadata → PostgreSQL
-6. Frontend calls attest endpoint → Backend API
-7. Backend calls smart contract → Initia EVM
-8. Smart contract emits event → Blockchain
-9. Backend stores tx hash → PostgreSQL
-10. Frontend displays success → User
+### Publish
+1. Publisher registers the batch (`POST /batches`).
+2. Publisher uploads the PDF; the backend stores it and its SHA-256 fingerprint.
+3. Extraction reads the PDF text and produces structured results; the batch becomes `READY`.
+4. The backend builds the canonical JSON and its Keccak-256 hash (`GET /attestation`).
+5. `POST /publish` calls `publish(batchIdHash, attestationHash)`, waits for the receipt, checks its
+   status, and stores the network, transaction hash and time. The batch becomes `PUBLISHED`.
 
-### Verification Flow
-1. Frontend requests verification → Backend API (batch ID)
-2. Backend queries database → PostgreSQL (get document hash)
-3. Backend queries blockchain → Initia EVM (get on-chain hash)
-4. Backend compares hashes → Verification logic
-5. Backend retrieves extracted data → PostgreSQL
-6. Backend returns result → Frontend
-7. Frontend displays verification status + lab data → User
+### Verify
+1. Anyone requests `GET /batches/{batchId}/verify`.
+2. The backend recomputes the canonical JSON hash from the stored record.
+3. It reads `get(batchIdHash)` from the registry.
+4. It returns `verified`, `mismatch` or `unpublished`, with the product details, lab results and both hashes.
 
-## Technology Integration Points
+## Integration Points
 
-- **Frontend ↔ Backend**: REST API over HTTP/HTTPS
-- **Backend ↔ Database**: PostgreSQL connection pool
-- **Backend ↔ Blockchain**: JSON-RPC to Initia EVM node (via ethers.js/viem)
-- **Backend ↔ AI Service**: HTTP API calls (OpenAI) or local model inference
-- **Backend ↔ File Storage**: Filesystem API or S3 SDK
-
+- **Frontend ↔ Backend:** REST over HTTPS; CORS allows `*.vercel.app` and localhost by default.
+- **Backend ↔ Database:** SQLAlchemy (PostgreSQL in Docker/production, SQLite locally).
+- **Backend ↔ Blockchain:** web3.py over JSON-RPC; EIP-1559 fees except on Initia EVM.
+- **Backend ↔ Extraction:** `mock` (tests), `demo` (offline rule-based parser), or an OpenAI-compatible API.

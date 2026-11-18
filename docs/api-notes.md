@@ -25,8 +25,8 @@ The `/batches/{batchId}/verify` endpoint requires **no authentication** and is p
 ## ID Formats
 
 ### Batch ID (`batchId`)
-- **Format**: Human-friendly string with uppercase letters, numbers, and hyphens
-- **Pattern**: `^[A-Z0-9-]+$`
+- **Format**: Human-friendly, URL-safe string: letters, numbers, dots, dashes and underscores; max 64 characters
+- **Pattern**: `^[A-Za-z0-9][A-Za-z0-9._-]*$`
 - **Examples**: 
   - `VA-2025-0001` (Vitamin A batch)
   - `OMEGA3-2025-Q1-042`
@@ -68,11 +68,13 @@ The `/batches/{batchId}/verify` endpoint requires **no authentication** and is p
 - **401 Unauthorized**: Missing or invalid API key (admin endpoints only)
 - **404 Not Found**: Resource does not exist
   - Examples: Batch not found, document not found, attestation not found
-- **409 Conflict**: Resource conflict (e.g., duplicate batch ID)
+- **409 Conflict**: Resource conflict (duplicate batch ID; batch already published, so documents and extraction are frozen)
+- **413 Payload Too Large**: Upload exceeds `MAX_UPLOAD_BYTES` (default 20 MB)
+- **415 Unsupported Media Type**: Upload is not a PDF
 
 ### Server Error Codes
-- **500 Internal Server Error**: Unexpected server errors
-  - Examples: Database connection failure, blockchain RPC failure, AI extraction failure
+- **500 Internal Server Error**: Unexpected server errors (e.g. database failure)
+- **502 Bad Gateway**: Upstream failure: blockchain RPC or reverted transaction (`BLOCKCHAIN_ERROR`), LLM provider (`LLM_ERROR`)
 
 **Note**: All error responses follow the standard `Error` schema with `code`, `message`, and optional `details`.
 
@@ -90,10 +92,13 @@ The `/batches/{batchId}/verify` endpoint requires **no authentication** and is p
 
 **Response Includes:**
 - `verified`: Boolean indicating if hashes match
-- `offchainHash`: Hash from database
-- `onchainHash`: Hash from blockchain (null if not published)
-- `mismatchReason`: Explanation if verification fails
-- `attestation`: Summary data for display (product name, manufacturer, etc.)
+- `status`: `verified`, `mismatch` (on-chain hash differs) or `unpublished` (nothing sealed yet)
+- `offchainHash`: Hash recomputed from the stored record (null until extraction)
+- `onchainHash`: Hash from the registry (null if not published)
+- `txHash`, `chain`, `publishedAt`: Where and when the record was sealed
+- `mismatchReason`: Explanation when not verified
+- `product`: Product name, manufacturer, supplement type, production and expiry dates
+- `labReport`: Extracted lab name, report date, analytes, contaminants and methods (null until extraction)
 
 **When to Use:**
 - ✅ Public verification flows
@@ -139,7 +144,7 @@ The `canonicalJson` field in attestations must be serialized deterministically:
 {"batchId":"VA-2025-0001","contaminants":{"lead":"< 0.1 ppm"},"manufacturer":"PureSupplements Inc.","potency":{"vitaminA":"10,000 IU"},"productionDate":"2025-01-15","productName":"Vitamin A 10,000 IU","supplementType":"Vitamin A","testDate":"2025-01-18"}
 ```
 
-**Implementation Note**: Use a JSON canonicalization library (e.g., `canonicaljson` for Node.js or `canonicaljson` for Python) to ensure consistent hashing.
+**Implementation Note**: The backend serializes with `json.dumps(..., sort_keys=True, separators=(",", ":"), ensure_ascii=True)` (`app/attestation/canonical.py`) and hashes the result with Keccak-256. The canonical JSON also includes the PDF's SHA-256 `documentFingerprint` and a `schemaVersion`.
 
 ## File Upload Conventions
 
@@ -147,12 +152,12 @@ The `canonicalJson` field in attestations must be serialized deterministically:
 - **Content-Type**: `multipart/form-data`
 - **Field Name**: `file`
 - **Accepted Types**: `application/pdf` only (in MVP)
-- **Size Limits**: Backend should enforce reasonable limits (e.g., 10MB max)
-- **Storage**: Backend stores file and returns `storageUrl` or `signedUrl`
+- **Size Limits**: Enforced by the backend (`MAX_UPLOAD_BYTES`, default 20 MB); the file must start with `%PDF-`
+- **Storage**: The PDF is stored in the database with its SHA-256 fingerprint; the response returns document metadata
 
 **Request Example:**
 ```
-POST /api/batches/VA-2025-0001/documents
+POST /batches/VA-2025-0001/documents
 Content-Type: multipart/form-data; boundary=----WebKitFormBoundary
 X-API-Key: your-api-key
 
@@ -167,23 +172,32 @@ Content-Type: application/pdf
 ## Blockchain Integration
 
 ### Publishing (`POST /batches/{batchId}/publish`)
-- **Network**: Initia EVM testnet (in MVP)
-- **Smart Contract**: `BatchRegistry.attestBatch(batchId, hash)`
-- **Hash Format**: `bytes32` (32 bytes, hex-encoded)
-- **Publisher Address**: Ethereum-compatible address (`0x...`)
+- **Network**: Base (Ethereum L2); Base Sepolia testnet by default. Set with `CHAIN_NETWORK`
+  (`base-sepolia`, `base`, `sepolia`, `ethereum`, `initia-evm`).
+- **Smart Contract**: `BatchHashRegistry.publish(bytes32 batchIdHash, bytes32 attestationHash)`
+  - `batchIdHash = keccak256(batchId)`, `attestationHash = keccak256(canonical JSON)`
+- **Signer**: the backend's publisher key (`PUBLISHER_PRIVATE_KEY`); clients never hold a wallet.
 
 **Transaction Flow:**
-1. Backend receives publish request with `publisherAddress`
-2. Backend retrieves `canonicalJsonHash` from database
-3. Backend converts hex string to `bytes32`
-4. Backend calls smart contract with publisher's wallet (via RPC or wallet provider)
-5. Backend waits for transaction confirmation
-6. Backend stores `txHash`, `blockNumber`, `publishedAt` in database
-7. Backend returns success response
+1. Backend checks the batch is `READY` (409 if already published, 400 if not extracted).
+2. Backend recomputes the canonical JSON and its Keccak-256 hash.
+3. Backend signs and sends `publish(...)` (EIP-1559 fees; legacy only on Initia EVM).
+4. Backend waits for the receipt and checks its status; a reverted transaction returns 502.
+5. Backend stores the network, `txHash`, publisher address and `publishedAt`.
+6. Backend returns `txHash`, `blockNumber` and `publishedAt`.
 
 **Error Handling:**
-- If transaction fails (revert, insufficient gas, etc.), return `500` with error details
-- If blockchain RPC is unavailable, return `500` with appropriate error code
+- `ALREADY_PUBLISHED` revert from the contract: `409 Conflict`
+- RPC failure or reverted transaction: `502` with code `BLOCKCHAIN_ERROR`
+
+### Network details (`GET /chain/info`, public)
+Returns the active network (`network`, `displayName`, `chainId`, `testnet`), `mode` (`real` or
+`mock`), the registry `contractAddress` and the block-explorer base `explorerUrl`. In mock mode the
+contract address and explorer URL are null, since mock transactions do not exist on a real chain.
+
+### Mock mode (`CHAIN_MODE=mock`)
+A local registry mirrors the contract (one seal per batch), issues realistic block numbers for the
+selected network, and persists to `MOCK_CHAIN_PATH` (default `mock_chain.json`) across restarts.
 
 ## Rate Limiting (Future)
 
@@ -211,6 +225,7 @@ API versioning strategy (for future):
 ### Mock Data for Development
 - Use test batch IDs: `TEST-2025-0001`, `TEST-2025-0002`
 - Use test API key: `test-api-key-12345`
-- Use test wallet address: `0x0000000000000000000000000000000000000000`
-- Mock blockchain responses for local development
+- Mock publisher address: `0x0000000000000000000000000000000000000000`
+- Sample Certificate of Analysis: `backend/tests/fixtures/sample_coa.pdf` (also linked from the publisher console); use `LLM_PROVIDER=demo` to extract its results offline
+- Use `CHAIN_MODE=mock` for local development
 

@@ -779,16 +779,6 @@ button:disabled {
   overflow-wrap: anywhere;
 }
 
-.banner--warn {
-  border-color: var(--warn-line);
-  background: var(--warn-soft);
-}
-
-.banner--warn .banner__icon,
-.banner--warn .banner__title {
-  color: var(--warn);
-}
-
 /* ---------- Seal ---------- */
 
 .seal {

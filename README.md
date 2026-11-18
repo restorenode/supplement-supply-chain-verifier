@@ -121,7 +121,31 @@ docker compose up --build
 - Frontend: http://localhost:3000
 - Backend: http://localhost:8000
 - Admin UI: http://localhost:3000/admin (use `ADMIN_API_KEY` from `.env`)
-- Docker Compose runs with `LLM_PROVIDER=mock` and `CHAIN_MODE=mock` by default.
+- Docker Compose runs with `CHAIN_NETWORK=base-sepolia`, `CHAIN_MODE=mock` and `LLM_PROVIDER=demo` by default.
+
+## Backend + Frontend (without Docker)
+
+Backend (Python 3.11+):
+
+```bash
+cd backend
+python3 -m venv .venv && source .venv/bin/activate
+python3 -m pip install -r requirements-dev.txt
+cp .env.example .env            # set ADMIN_API_KEY; CHAIN_MODE=mock needs no RPC or keys
+LLM_PROVIDER=demo python3 -m uvicorn app.main:app --reload --port 8000
+```
+
+Frontend (Node 20+), in a second terminal:
+
+```bash
+cd frontend
+npm ci
+cp .env.example .env.local      # NEXT_PUBLIC_API_BASE_URL=http://localhost:8000
+npm run dev
+```
+
+Open http://localhost:3000/admin, connect with your `ADMIN_API_KEY`, and use "sample certificate (PDF)"
+in the upload step to run the whole flow. Sealed batches persist in `backend/mock_chain.json`.
 
 ## Tests
 

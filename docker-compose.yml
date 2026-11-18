@@ -18,7 +18,8 @@ services:
     environment:
       DATABASE_URL: postgresql+psycopg2://postgres:${POSTGRES_PASSWORD}@db:5432/postgres
       ADMIN_API_KEY: ${ADMIN_API_KEY}
-      LLM_PROVIDER: mock
+      LLM_PROVIDER: demo
+      CHAIN_NETWORK: base-sepolia
       CHAIN_MODE: mock
       ENV: prod
     ports:
