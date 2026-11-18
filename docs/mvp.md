@@ -1,12 +1,17 @@
 # MVP Scope
 
+> Original MVP plan, kept for reference. For what is built today see the README and
+> `docs/architecture.md`. Notable changes from this plan: the registry runs on **Base** (Base
+> Sepolia by default) instead of Initia EVM, publishing is signed by the backend with an API-key
+> console instead of a browser wallet, and PDFs are stored in the database.
+
 ## Must-Have Features
 
 ### Core Functionality
 - [ ] **PDF Upload**: Publishers can upload lab report PDFs via web interface
 - [ ] **AI Extraction**: System extracts batch ID, product name, test results, and key metadata from PDFs
 - [ ] **Hash Generation**: System generates SHA-256 hash of uploaded PDF
-- [ ] **Blockchain Attestation**: System publishes batch attestation to Initia EVM with batch ID and hash
+- [ ] **Blockchain Attestation**: System publishes batch attestation to Base (Base Sepolia by default) with batch ID and hash
 - [ ] **Batch Verification**: Consumers can verify a batch by entering batch ID
 - [ ] **Hash Verification**: System verifies on-chain hash matches off-chain stored hash
 - [ ] **Data Display**: Consumers can view extracted lab report data (read-only)
@@ -50,7 +55,7 @@
 
 ### Functional Requirements
 - [ ] Publisher can upload a PDF and see extracted data preview before publishing
-- [ ] Publisher can successfully publish an attestation to Initia EVM testnet
+- [ ] Publisher can successfully publish an attestation to Base Sepolia
 - [ ] Consumer can verify a batch ID and see "Verified" status when hash matches
 - [ ] Consumer sees "Unverified" or "Not Found" for invalid/non-existent batches
 - [ ] Extracted data displays correctly formatted (ingredients, test results, dates)
@@ -60,7 +65,7 @@
 ### Technical Requirements
 - [ ] All API endpoints documented in OpenAPI/Swagger format
 - [ ] Database schema supports all required data fields
-- [ ] Smart contract deployed and verified on Initia EVM testnet
+- [ ] Smart contract deployed and verified on Base Sepolia
 - [ ] Frontend connects to backend API successfully
 - [ ] Backend connects to blockchain RPC endpoint
 - [ ] Docker Compose starts all services without errors
