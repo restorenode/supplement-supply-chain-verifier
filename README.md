@@ -2,7 +2,7 @@
 
 ## Demo Video
 
-<img src="docs/media/supplement-verification.gif" alt="Supplement verification demo" width="720" />
+<img src="docs/media/publish-and-verify-walkthrough.gif" alt="Walkthrough: publishing a batch attestation in the publisher console, then verifying it on the public Verify page" width="720" />
 
 ## Problem Statement
 
