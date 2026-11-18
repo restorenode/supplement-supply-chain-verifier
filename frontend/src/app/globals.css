@@ -32,6 +32,8 @@
   --font-sans: var(--font-geist-sans), ui-sans-serif, system-ui, sans-serif;
   --font-mono: var(--font-geist-mono), ui-monospace, "SFMono-Regular", Menlo, monospace;
   --gutter: clamp(16px, 4vw, 48px);
+  /* Vertical gap between top-level page sections (Home, Verify, Admin). */
+  --section-gap: clamp(36px, 4vw, 56px);
 }
 
 :root[data-theme="dark"] {
@@ -1002,8 +1004,8 @@ button:disabled {
 }
 
 .hero__inner {
-  padding-top: clamp(44px, 8vw, 112px);
-  padding-bottom: clamp(44px, 8vw, 112px);
+  padding-top: clamp(40px, 5vw, 72px);
+  padding-bottom: clamp(40px, 4.5vw, 64px);
   display: flex;
   flex-wrap: wrap;
   align-items: center;
@@ -1037,8 +1039,8 @@ button:disabled {
 }
 
 .hero__title {
-  margin: 20px 0 16px;
-  font-size: clamp(36px, 5.2vw, 68px);
+  margin: 16px 0 14px;
+  font-size: clamp(36px, 4.2vw, 60px);
   line-height: 1.02;
   letter-spacing: -0.04em;
   font-weight: 600;
@@ -1046,7 +1048,7 @@ button:disabled {
 }
 
 .hero__lede {
-  margin: 0 0 32px;
+  margin: 0 0 28px;
   max-width: 540px;
   font-size: clamp(16px, 1.4vw, 18px);
   color: var(--ink2);
@@ -1090,8 +1092,8 @@ button:disabled {
 }
 
 .hero__publisher {
-  margin-top: 36px;
-  padding-top: 20px;
+  margin-top: 28px;
+  padding-top: 18px;
   border-top: 1px solid var(--line);
   display: flex;
   flex-wrap: wrap;
@@ -1116,7 +1118,7 @@ button:disabled {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: 12px 18px;
+  padding: 14px 18px;
   border-bottom: 1px solid var(--line);
   font-family: var(--font-mono);
   font-size: 10.5px;
@@ -1128,7 +1130,7 @@ button:disabled {
   display: flex;
   align-items: center;
   gap: 18px;
-  padding: 22px 18px;
+  padding: 30px 18px;
   background: var(--acc-soft);
   border-bottom: 1px solid var(--acc-line);
 }
@@ -1154,7 +1156,7 @@ button:disabled {
 
 .sample__list {
   margin: 0;
-  padding: 6px 18px 4px;
+  padding: 8px 18px;
   font-size: 13.5px;
 }
 
@@ -1162,7 +1164,7 @@ button:disabled {
   display: flex;
   justify-content: space-between;
   gap: 12px;
-  padding: 9px 0;
+  padding: 13px 0;
   border-bottom: 1px solid var(--line);
 }
 
@@ -1181,8 +1183,8 @@ button:disabled {
 }
 
 .sample__hashes {
-  margin: 4px 18px 18px;
-  padding: 12px;
+  margin: 12px 18px 22px;
+  padding: 14px 12px;
   border-radius: 8px;
   background: var(--sunken);
   border: 1px solid var(--line);
@@ -1203,11 +1205,11 @@ button:disabled {
 }
 
 .section {
-  padding-top: clamp(44px, 6vw, 80px);
+  padding-top: var(--section-gap);
 }
 
 .section--last {
-  padding-bottom: clamp(56px, 7vw, 96px);
+  padding-bottom: clamp(40px, 4.5vw, 64px);
 }
 
 .section__head {
@@ -1385,7 +1387,7 @@ button:disabled {
 
 .results {
   max-width: 1120px;
-  padding-top: clamp(24px, 4vw, 40px);
+  padding-top: var(--section-gap);
   padding-bottom: 80px;
   display: flex;
   flex-direction: column;
@@ -1768,7 +1770,7 @@ button:disabled {
 
 .console {
   max-width: 1320px;
-  padding-top: clamp(24px, 4vw, 44px);
+  padding-top: var(--section-gap);
   padding-bottom: 80px;
   display: flex;
   flex-direction: column;
